@@ -38,6 +38,11 @@ label {
   height: 40px !important;
 }
 
+.custom-rate {
+  font-size: 40px;
+}
+
+
 /* Common styling */
 
 .spinner-parent {
@@ -116,6 +121,19 @@ p {
   cursor: pointer;
 }
 
+.upload-button {
+  background-color: blue;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 16px;
+  border-radius: 5px;
+}
+
+.upload-button:hover {
+  background-color: darkblue;
+}
 
 /* authentication pages */
 
@@ -151,4 +169,11 @@ p {
   padding: 7px 15px;
   margin-left: -40px;
   border-bottom-left-radius: 10px;
+}
+ 
+.terms-content {
+  font-size: 14px;
+  line-height: 1.6;
+  color: black;
+  margin-top: 20px;
 }

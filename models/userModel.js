@@ -6,6 +6,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    phoneNumber: {
+      type: String,
+      required: true,
+    },
     email: {
       type: String,
       required: true,
@@ -29,6 +33,36 @@ const userSchema = new mongoose.Schema(
     unseenNotifications: {
       type: Array,
       default: [],
+    },
+    resetCode: {
+      type: String,
+      default: null,
+    },
+    resetCodeExpiration: {
+      type: Date,
+      default: null,
+    },
+    authCode: {
+      type: String,
+      default:null,
+    },
+    loginAttempts: {
+      type: Number,
+      default: 0,
+    },
+    lockUntil: {
+      type: Number,
+      default: 0,
+    },
+    agreedToTerms: {
+      type: Boolean,
+      default: false,
+    },
+    pdfUrl: { 
+      type: String,
+    },
+    jpgUrl: { 
+      type: String,
     },
   },
   {

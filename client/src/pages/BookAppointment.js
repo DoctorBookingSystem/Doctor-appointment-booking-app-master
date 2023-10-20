@@ -71,6 +71,8 @@ function BookAppointment() {
       dispatch(hideLoading());
     }
   };
+
+
   const bookNow = async () => {
     setIsAvailable(false);
     try {
@@ -154,11 +156,11 @@ function BookAppointment() {
                   }}
                 />
                 <TimePicker
-                  format="HH:mm"
+                  format="h:mm a"
                   className="mt-3"
                   onChange={(value) => {
                     setIsAvailable(false);
-                    setTime(moment(value).format("HH:mm"));
+                    setTime(moment(value).format("h:mm a"));
                   }}
                 />
               {!isAvailable &&   <Button

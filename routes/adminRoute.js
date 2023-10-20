@@ -76,6 +76,43 @@ router.post(
   }
 );
 
+router.delete("/delete-user/:userId", authMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    // Delete the user by their ID
+    await User.findByIdAndDelete(userId);
+    res.status(200).send({
+      message: "User deleted successfully",
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    res.status(500).send({
+      message: "Error deleting user",
+      success: false,
+      error,
+    });
+  }
+});
+
+router.delete("/delete-doctor/:doctorId", authMiddleware, async (req, res) => {
+  try {
+    const { doctorId } = req.params;
+    
+    await Doctor.findByIdAndDelete(doctorId);
+    res.status(200).send({
+      message: "Doctor deleted successfully",
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error deleting doctor:", error);
+    res.status(500).send({
+      message: "Error deleting doctor",
+      success: false,
+      error,
+    });
+  }
+});
 
 
 module.exports = router;

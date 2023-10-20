@@ -5,6 +5,7 @@ import { showLoading, hideLoading } from "../../redux/alertsSlice";
 import {toast} from 'react-hot-toast'
 import axios from "axios";
 import { Table } from "antd";
+import { Popconfirm, Button } from "antd";
 import moment from "moment";
 
 function DoctorsList() {
@@ -52,6 +53,28 @@ function DoctorsList() {
   useEffect(() => {
     getDoctorsData();
   }, []);
+
+  const handleDeleteDoctor = async (doctorId) => {
+    try {
+      dispatch(showLoading());
+      const response = await axios.delete(`/api/admin/delete-doctor/${doctorId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      dispatch(hideLoading());
+      if (response.data.success) {
+        // Update the doctors list by filtering out the deleted doctor
+        const updatedDoctors = doctors.filter((doctor) => doctor._id !== doctorId);
+        setDoctors(updatedDoctors);
+        toast.success("Doctor deleted successfully");
+      } 
+    } catch (error) {
+      toast.error("Error deleting doctor");
+      dispatch(hideLoading());
+    }
+  };
+  
   const columns = [
     {
       title: "Name",
@@ -81,24 +104,45 @@ function DoctorsList() {
       render: (text, record) => (
         <div className="d-flex">
           {record.status === "pending" && (
-            <h1
-              className="anchor"
-              onClick={() => changeDoctorStatus(record, "approved")}
+            <Popconfirm
+              title="Are you sure you want to approve this doctor?"
+              onConfirm={() => changeDoctorStatus(record, "approved")}
+              okText="Yes"
+              cancelText="No"
             >
-              Approve
-            </h1>
+              <Button type="primary">Approve</Button>
+            </Popconfirm>
           )}
           {record.status === "approved" && (
-            <h1
-              className="anchor"
-              onClick={() => changeDoctorStatus(record, "blocked")}
+            <Popconfirm
+              title="Are you sure you want to block this doctor?"
+              onConfirm={() => changeDoctorStatus(record, "blocked")}
+              okText="Yes"
+              cancelText="No"
             >
-              Block
-            </h1>
+              <Button type="danger">Block</Button>
+            </Popconfirm>
           )}
         </div>
       ),
     },
+
+    {
+      title: "Delete",
+      dataIndex: "delete",
+      render: (text, record) => (
+        <div className="d-flex">
+          <Popconfirm
+            title="Are you sure you want to delete this doctor?"
+            onConfirm={() => handleDeleteDoctor(record._id)}
+            okText="Yes"
+            cancelText="No"
+          >
+            <Button type="danger">Delete</Button>
+          </Popconfirm>
+        </div>
+      ),
+    }      
   ];
   return (
     <Layout>

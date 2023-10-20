@@ -65,7 +65,7 @@ function DoctorAppointments() {
     {
       title: "Phone",
       dataIndex: "phoneNumber",
-      render: (text, record) => <span>{record.doctorInfo.phoneNumber}</span>,
+      render: (text, record) => <span>{record.userInfo.phoneNumber}</span>,
     },
     {
       title: "Date & Time",
@@ -73,7 +73,7 @@ function DoctorAppointments() {
       render: (text, record) => (
         <span>
           {moment(record.date).format("DD-MM-YYYY")}{" "}
-          {moment(record.time).format("HH:mm")}
+          {moment(record.time).format("h:mm a")}
         </span>
       ),
     },

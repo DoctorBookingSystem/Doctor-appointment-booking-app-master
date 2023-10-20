@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { Badge } from "antd";
 import { clearUser } from "../redux/userSlice"
+//import UserProfile from "../pages/UserProfile";
 
 function Layout({ children }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -23,8 +24,23 @@ function Layout({ children }) {
       icon: "ri-file-list-line",
     },
     {
+      name: "Records",
+      path: "/records",
+      icon: "ri-file-list-line",
+    },
+    {
       name: "Apply Doctor",
       path: "/apply-doctor",
+      icon: "ri-hospital-line",
+    },
+    {
+      name: "Profile",
+      path: `/user/profile/${user?._id}`,
+      icon: "ri-user-line",
+    },
+    {
+      name: "Feedback",
+      path: "/feedback",
       icon: "ri-hospital-line",
     }
   ];
@@ -45,6 +61,11 @@ function Layout({ children }) {
       path: `/doctor/profile/${user?._id}`,
       icon: "ri-user-line",
     },
+    {
+      name:"Forms",
+      path: "/doctor/patientform",
+      icon: "ri-file-list-line",
+    }
   ];
 
   const adminMenu = [

@@ -3,7 +3,9 @@ import { useDispatch } from "react-redux";
 import Layout from "../../components/Layout";
 import { showLoading, hideLoading } from "../../redux/alertsSlice";
 import axios from "axios";
+import { toast } from 'react-hot-toast';
 import { Table } from "antd";
+import { Popconfirm, Button } from "antd";
 import moment from "moment";
 
 function Userslist() {
@@ -30,6 +32,27 @@ function Userslist() {
     getUsersData();
   }, []);
 
+  const handleDeleteUser = async (userId) => {
+    try {
+      dispatch(showLoading());
+      const response = await axios.delete(`/api/admin/delete-user/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      dispatch(hideLoading());
+      if (response.data.success) {
+        // Update the users list after successful deletion
+        const updatedUsers = users.filter((user) => user._id !== userId);
+        setUsers(updatedUsers);
+        toast.success(response.data.message);
+      }
+    } catch (error) {
+      toast.error("Error deleting user");
+      dispatch(hideLoading());
+    }
+  };
+
   const columns = [
     {
       title: "Name",
@@ -45,13 +68,20 @@ function Userslist() {
       render: (record , text) => moment(record.createdAt).format("DD-MM-YYYY"),
     },
     {
-      title: "Actions",
-      dataIndex: "actions",
-      render: (text, record) => (
-        <div className="d-flex">
-          <h1 className="anchor">Block</h1>
-        </div>
-      ),
+        title: "Actions",
+        dataIndex: "actions",
+        render: (text, record) => (
+          <div className="d-flex">
+            <Popconfirm
+              title="Are you sure you want to delete this user?"
+              onConfirm={() => handleDeleteUser(record._id)}
+              okText="Yes"
+              cancelText="No"
+            >
+              <Button type="danger">Delete</Button>
+            </Popconfirm>
+          </div>
+        ),
     },
   ];
 
