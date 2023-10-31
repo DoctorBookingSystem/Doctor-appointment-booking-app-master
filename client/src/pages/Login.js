@@ -92,7 +92,7 @@ function Login() {
           {step === 2 && (
             <input
               type="text"
-              placeholder="Enter 2FA Code"
+              placeholder="Enter temporary password"
               value={twoFactorCode}
               onChange={(e) => setTwoFactorCode(e.target.value)}
               style={{ width: '100%' }}

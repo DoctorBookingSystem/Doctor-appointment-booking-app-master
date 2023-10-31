@@ -19,6 +19,7 @@ import DoctorAppointments from "./pages/Doctor/DoctorAppointments";
 import HealthInformation from "./pages/HealthInformation";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import RecoverAccount from "./pages/RecoverAccount";
 
 function App() {
   const { loading } = useSelector((state) => state.alerts); 
@@ -147,6 +148,14 @@ function App() {
           element={
             <PublicRoute>
               <ResetPassword />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/recover-account"
+          element={
+            <PublicRoute>
+              <RecoverAccount />
             </PublicRoute>
           }
         />

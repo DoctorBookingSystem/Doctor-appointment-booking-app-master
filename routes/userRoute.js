@@ -14,6 +14,7 @@ const speakeasy = require("speakeasy");
 const { updateTwoFactorSecret, encryptData, decryptData } = require('./services');
 const nodemailer = require("nodemailer");
 const crypto = require('crypto');
+const LOCK_TIME = 2 * 60 * 1000;
 //const encryptionKey = crypto.randomBytes(32).toString('hex'); created encrypted key
 //const iv1 = crypto.randomBytes(16); 
 
@@ -63,12 +64,56 @@ router.post("/login" , async (req, res) => {
     secret = speakeasy.generateSecret({ length: 20 }).base32;
     const user = await User.findOne({ email: encryptedEnteredEmail });
     const userAccess = user.access;
+    const decryptedEmail = decryptData(encryptedEnteredEmail);
 
     if (!user) {
       return res
         .status(200)
         .send({ message: "User does not exist", success: false });
     }
+
+    if (user.loginAttempts >= 3 && user.lockUntil > Date.now()) {
+
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: 'FIUDoctorBooking@gmail.com',
+          pass: 'dastwmvuhcvcddwj',
+        },
+      });
+
+      const mailOptions = {
+        from: 'FIUDoctorBooking@fiu.edu',
+        to: decryptedEmail, 
+        subject: 'Account Security Alert - Potential Breach Detected',
+        html: ` <p>
+        Dear ${decryptData(user.name)},
+        <br><br>
+        We are writing to inform you about an important security event related to your account. Our security systems have detected multiple failed login attempts 
+        on your account. While your account remains secure, these unauthorized attempts raise concerns about the safety of your credentials. If you ever suspect any unusual activity or have questions about your account's security, 
+        please reach out to us at fiuBookingSupport@gmail.com.
+        <br><br>
+        Sincerely,<br><br>
+        The FIU Doctor Booking Security Team
+        </p>`,
+      }
+
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.error('Error sending email:', error);
+          // Handle email sending error
+          return res.status(500).json({ success: false, message: "Error sending email" });
+        } else {
+          console.log('Email sent:', info.response);
+          // Email sent successfully, respond to the client
+          return res.status(200).json({ success: true, message: " Security email sent" });
+        }
+      });
+      return res
+        .status(200)
+        .send({ message: "Account locked. Try again later.", success: false });
+    }
+    
     if (userAccess === false){
       return res
       .status(200)
@@ -76,10 +121,17 @@ router.post("/login" , async (req, res) => {
     }
     const isMatch = await bcrypt.compare(req.body.password, user.password);
     if (!isMatch) {
+      user.loginAttempts++;
+      if (user.loginAttempts >= 3) {
+        user.lockUntil = Date.now() + LOCK_TIME;
+      }
+      await user.save();
       return res
         .status(200)
         .send({ message: "Password is incorrect", success: false });
     } else {
+      user.loginAttempts = 0;
+      await user.save();
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
         expiresIn: "1d",
       });
@@ -93,8 +145,6 @@ router.post("/login" , async (req, res) => {
           pass: 'dastwmvuhcvcddwj',
         },
       });
-
-      const decryptedEmail = decryptData(encryptedEnteredEmail);
 
       const mailOptions = {
         from: 'FIUDoctorBooking@fiu.edu',
@@ -412,6 +462,34 @@ router.post("/verify-2fa", async (req, res) => {
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
         expiresIn: "1d",
       });
+
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: 'FIUDoctorBooking@gmail.com',
+          pass: 'dastwmvuhcvcddwj',
+        },
+      });
+
+      const mailOptions = {
+        from: 'FIUDoctorBooking@fiu.edu',
+        to: decryptedEmail, 
+        subject: 'Logged in successfully.',
+        html: `<p>You have successfully signed into your FIU Doctor Booking account. If you did not sign in, <a href="https://localhost:3000/recover-account">click here</a> to recover your account.</p>`,
+        text: `You have successfully signed into your FIU Doctor Booking account. If you did not sign in, <a href="https://localhost:3000/recover-account">click here</a> to recover your account.`,
+      }
+
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.error('Error sending email:', error);
+          // Handle email sending error
+          return res.status(500).json({ success: false, message: "Error sending email" });
+        } else {
+          console.log('Email sent:', info.response);
+          // Email sent successfully, respond to the client
+          return res.status(200).json({ success: true, message: "2FA code email sent", data: token, twoFactorCode: twoFactorCode });
+        }
+      });
       res
         .status(200)
         .send({ message: "Login successful", success: true, data: token });
@@ -695,6 +773,86 @@ router.post("/verify-reset-code", async (req, res) => {
   }
 });
 
+router.post("/temp-password", async (req, res) => {
+  try {
+    const min = 10000;
+    const max = 99999;
+    const random = Math.floor(Math.random() * (max - min + 1)) + min;
+    const encryptedEmail = encryptData(req.body.email);
+    const decryptedEmail = decryptData(encryptedEmail);
+    const user = await User.findOne({email: encryptedEmail });
+
+    if (!user) {
+      return res.status(200).send({
+        message: "Invalid or expired reset code",
+        success: false,
+      });
+    }
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: 'FIUDoctorBooking@gmail.com',
+        pass: 'dastwmvuhcvcddwj',
+      },
+    });
+
+    const mailOptions = {
+      from: 'FIUDoctorBooking@fiu.edu',
+      to: decryptedEmail, 
+      subject: 'Your Temporary Password.',
+      text: `Your temporary password is: ${random}.`,
+    }
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error('Error sending email:', error);
+        // Handle email sending error
+        return res.status(500).json({ success: false, message: "Error sending email" });
+      } else {
+        console.log('Email sent:', info.response);
+        // Email sent successfully, respond to the client
+        return res.status(200).json({ success: true, message: "Temporary password sent", data: random, });
+      }
+    });
+
+    res.status(200).send({
+      message: "Email sent successfully",
+      success: true,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({
+      message: "Error sending email.",
+      success: false,
+      error,
+    });
+  }
+});
+
+router.post("/verify-temp-password", async (req, res) => {
+  try {
+    const user = await User.findOne({
+
+    });
+    if (!user) {
+      return res.status(200).send({
+        message: "Invalid temporary password.",
+        success: false,
+      });
+    }
+    res.status(200).send({
+      message: "Reset code verified successfully",
+      success: true,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({
+      message: "Error verifying reset code",
+      success: false,
+      error,
+    });
+  }
+});
 
 
 module.exports = router;

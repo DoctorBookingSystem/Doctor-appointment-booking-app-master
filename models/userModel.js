@@ -70,6 +70,14 @@ const userSchema = new mongoose.Schema(
       type: Array,
       default: [],
     },
+    loginAttempts: {
+      type: Number,
+      default: 0,
+    },
+    lockUntil: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,
