@@ -97,7 +97,7 @@ function Layout({ children }) {
   }
 
   const updateExpireTime = () =>{
-    const expireTime = Date.now() + 10000;
+    const expireTime = Date.now() + 900000;
     localStorage.setItem("expireTime", expireTime);
   }
 

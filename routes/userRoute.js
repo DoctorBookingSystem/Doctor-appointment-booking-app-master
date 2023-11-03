@@ -58,8 +58,8 @@ router.post("/login" , async (req, res) => {
   try {
     const enteredEmail = req.body.email; 
     const encryptedEnteredEmail = encryptData(enteredEmail);
-    // const crypt = encryptData("jasonekildare@gmail.com");
-    // console.log(crypt);
+    const crypt = decryptData("28898db024c636134978dd230fd1b282");
+    console.log(crypt);
     let secret = "";
     secret = speakeasy.generateSecret({ length: 20 }).base32;
     const user = await User.findOne({ email: encryptedEnteredEmail });
@@ -275,8 +275,38 @@ router.post(
     try {
       const user = await User.findOne({ _id: req.body.userId });
       let decryptName = '';
+      //console.log(user);
+      if (user.email !== '283160a602594ecbd593521e55753243' ){
+        console.log(user.patientInfo.age+"This is their age.");
         decryptName = decryptData(user.name);
+        decryptLName = decryptData(user.lastName);
+        decryptPhoneNumber = decryptData(user.phoneNumber);
+        decryptAge = decryptData(user.patientInfo[0].age);
+        decryptHeight = decryptData(user.patientInfo[0].height);
+        decryptWeight = decryptData(user.patientInfo[0].weight);
+        decryptBronchitis = decryptData(user.patientInfo[0].bronchitis);
+        decryptAsthma = decryptData(user.patientInfo[0].asthma);
+        decryptHBP = decryptData(user.patientInfo[0].high_blood_pressure);
+        decryptDiabetes = decryptData(user.patientInfo[0].diabetes);
+        decryptEpilepsy_seizures = decryptData(user.patientInfo[0].epilepsy_seizures);
+        user.phoneNumber = decryptPhoneNumber;
+        user.patientInfo[0].age = decryptAge;
+        user.patientInfo[0].height = decryptHeight;
+        user.patientInfo[0].weight = decryptWeight;
+        user.patientInfo[0].bronchitis = decryptBronchitis;
+        user.patientInfo[0].asthma = decryptAsthma;
+        user.patientInfo[0].high_blood_pressure = decryptHBP;
+        user.patientInfo[0].diabetes = decryptDiabetes;
+        user.patientInfo[0].epilepsy_seizures = decryptEpilepsy_seizures;
         user.name = decryptName;
+        user.lastName = decryptLName;
+      }else {
+        decryptName = decryptData(user.name);
+        decryptLName = decryptData(user.lastName);
+        user.name = decryptName;
+        user.lastName = decryptLName;
+      }
+     // user.name = decryptName;
       const unseenNotifications = user.unseenNotifications;
       const seenNotifications = user.seenNotifications;
       seenNotifications.push(...unseenNotifications);
@@ -312,8 +342,37 @@ router.post("/delete-all-notifications", authMiddleware, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.body.userId });
     let decryptName = '';
-    decryptName = decryptData(user.name);
-    user.name = decryptName;
+    if (user.email !== '283160a602594ecbd593521e55753243' ){
+      decryptName = decryptData(user.name);
+      decryptLName = decryptData(user.lastName);
+      decryptPhoneNumber = decryptData(user.phoneNumber);
+      decryptAge = decryptData(user.patientInfo[0].age);
+      decryptHeight = decryptData(user.patientInfo[0].height);
+      decryptWeight = decryptData(user.patientInfo[0].weight);
+      decryptBronchitis = decryptData(user.patientInfo[0].bronchitis);
+      decryptAsthma = decryptData(user.patientInfo[0].asthma);
+      decryptHBP = decryptData(user.patientInfo[0].high_blood_pressure);
+      decryptDiabetes = decryptData(user.patientInfo[0].diabetes);
+      decryptEpilepsy_seizures = decryptData(user.patientInfo[0].epilepsy_seizures);
+      user.name = decryptName;
+      user.lastName = decryptLName;
+      user.phoneNumber = decryptPhoneNumber;
+      user.patientInfo[0].age = decryptAge;
+      user.patientInfo[0].height = decryptHeight;
+      user.patientInfo[0].weight = decryptWeight;
+      user.patientInfo[0].bronchitis = decryptBronchitis;
+      user.patientInfo[0].asthma = decryptAsthma;
+      user.patientInfo[0].high_blood_pressure = decryptHBP;
+      user.patientInfo[0].diabetes = decryptDiabetes;
+      user.patientInfo[0].epilepsy_seizures = decryptEpilepsy_seizures;
+    }else {
+      decryptName = decryptData(user.name);
+      decryptLName = decryptData(user.lastName);
+      decryptPhoneNumber = decryptData(user.phoneNumber);
+      user.phoneNumber = decryptPhoneNumber;
+      user.name = decryptName;
+      user.lastName = decryptLName;
+    }
     user.seenNotifications = [];
     user.unseenNotifications = [];
     await User.updateOne(
@@ -507,16 +566,17 @@ router.post("/verify-2fa", async (req, res) => {
 router.post('/updatePatientInfo', async (req, res) => {
   try {
     const formData = req.body; 
+    //console.log(formData.patientInfo[0].age);
     const user = await User.findOne({ _id: formData.userId });
     const encryptedNumber = encryptData(formData.phoneNumber);
-    const encryptedAge = encryptData(formData.age);
-    const encryptedHeight = encryptData(formData.height);
-    const encryptedWeight = encryptData(formData.weight);
-    const encryptedBronchitis = encryptData(formData.bronchitis);
-    const encryptedHighBloodPressure = encryptData(formData.high_blood_pressure);
-    const encryptedAsthma = encryptData(formData.asthma);
-    const encryptedDiabetes = encryptData(formData.diabetes);
-    const encryptedEpilepsySeizures = encryptData(formData.epilepsy_seizures);
+    const encryptedAge = encryptData(formData.patientInfo[0].age);
+    const encryptedHeight = encryptData(formData.patientInfo[0].height);
+    const encryptedWeight = encryptData(formData.patientInfo[0].weight);
+    const encryptedBronchitis = encryptData(formData.patientInfo[0].bronchitis);
+    const encryptedHighBloodPressure = encryptData(formData.patientInfo[0].high_blood_pressure);
+    const encryptedAsthma = encryptData(formData.patientInfo[0].asthma);
+    const encryptedDiabetes = encryptData(formData.patientInfo[0].diabetes);
+    const encryptedEpilepsySeizures = encryptData(formData.patientInfo[0].epilepsy_seizures);
     const decryptedEmail = decryptData(user.email);
 
     if (!user) {
@@ -575,12 +635,21 @@ router.post("/set_request", authMiddleware, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.body._id });
     const unseenNotifications = user.unseenNotifications;
-    unseenNotifications.push({
-      type: "new notification from the admin.",
-      message: "Your request to make changes have been approved!",
-      onClickPath: "/notifications",
-    });
-    user.request = true;
+
+    if (req.body.action == "accept"){
+      unseenNotifications.push({
+        type: "new notification from the admin.",
+        message: "Your request to make changes have been approved!",
+        onClickPath: "/notifications",
+      });
+      user.request = true;
+    }else{
+      unseenNotifications.push({
+        type: "new notification from the admin.",
+        message: "Your request to make changes have been denied.",
+        onClickPath: "/notifications",
+      });
+    }
     await user.save(); 
 
     res.status(200).send({

@@ -9,7 +9,7 @@ import { setUser } from "../redux/userSlice";
 import React, { useState, useEffect } from 'react';
 
 function Notifications() {
-  const {user} = useSelector((state) => state.user);
+  const { user } = useSelector((state) => state.user);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [userRequest, setUserRequest] = useState(null);
@@ -55,7 +55,7 @@ function Notifications() {
         toast.error("Something went wrong");
       }
   }
-    const fetchUserById = async (userId) => {
+    const fetchUserById = async (userId, action) => {
       try {
         markAllAsSeen();
         console.log("Client: "+userId);
@@ -63,6 +63,8 @@ function Notifications() {
           "/api/user/set_request",
           {
             _id: userId,
+            action: action
+
           },
           {
             headers: {
@@ -94,12 +96,21 @@ function Notifications() {
             <div className="card p-2 mt-2" onClick={()=>navigate(notification.onClickPath)}>
                 <div className="card-text">{notification.message}</div>
                 {notification.request ? (
+                  <div>
                   <span
                     className="clickable-text"
-                    onClick={() => fetchUserById(notification.user)}
+                    onClick={() => fetchUserById(notification.user,"accept")}
                   >
                     Accept
                   </span>
+                  <span
+                    className="clickable-text"
+                    onClick={() => fetchUserById(notification.user, "decline")}
+                    style={{ marginLeft: '10px' }} 
+                  >
+                    Decline
+                  </span>
+                  </div>
                 ) : <p></p>}
             </div>
           ))}

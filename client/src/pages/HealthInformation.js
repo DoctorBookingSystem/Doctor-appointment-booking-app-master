@@ -13,7 +13,7 @@ import moment from "moment";
 function HealthInformation() {
   const { user } = useSelector((state) => state.user);
   const params = useParams();
-  const [user1, setUser1] = useState(null);
+  const [user1, setUser1] = useState();
   const [count, setCount] = useState(0);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -69,7 +69,6 @@ function HealthInformation() {
       dispatch(hideLoading());
       if (response.data.success) {
         toast.success(response.data.message);
-        console.log(response);
         navigate("/");
       } else {
         toast.error(response.data.message);
@@ -97,8 +96,8 @@ function HealthInformation() {
 
       dispatch(hideLoading());
       if (response.data.success) {
-        setUser1(response.data.data);
-        console.log(user1);
+        console.log("success");
+        setUser1(user);
       }
     } catch (error) {
       console.log(error);
@@ -109,20 +108,20 @@ function HealthInformation() {
   useEffect(() => {
     getUserData();
   }, []);
+  
   return (
     <Layout>
       <h1 className="page-title">My Health Information</h1>
-      <hr />
-
-  {user1 ? (
+      <hr />  
+  {user ? (
     <div>
-      {user1.patientInfo.length > 0 && user1.request == false ? (
+      {user.patientInfo.length > 0 && user.request == false ? (
         <div>
           <h5>Basic Information</h5>
-          <p>Name: {user1.name}</p>
-          <p>Last Name: {user1.lastName}</p>
-          <p>Phone Number: {user1.phoneNumber}</p>
-          {user1.patientInfo.map((info, index) => (
+          <p>Name: {user.name}</p>
+          <p>Last Name: {user.lastName}</p>
+          <p>Phone Number: {user.phoneNumber}</p>
+          {user.patientInfo.map((info, index) => (
             <div key={index}>
               <p>Age: {info.age}</p>
               <p>Height: {info.height}</p>
@@ -133,11 +132,11 @@ function HealthInformation() {
       ) : (
         <p> </p>
       )}
-      {user1.patientInfo.length > 0 && user1.request == false ? (
+      {user.patientInfo.length > 0 && user.request == false ? (
         (
           <div style={{ marginTop: '20px' }}>
             <h5>Medical History</h5>
-            {user1.patientInfo.map((info, index) => (
+            {user.patientInfo.map((info, index) => (
               <div key={index}>
                 <p>bronchitis: {info.bronchitis}</p>
                 <p>asthma: {info.asthma}</p>
@@ -163,7 +162,7 @@ function HealthInformation() {
     <UserForm
       onFinish={onFinish}
       initialValues={{
-        ...user1,
+        ...user,
       }}
     />      
     )}
@@ -173,7 +172,7 @@ function HealthInformation() {
     <UserForm
       onFinish={onFinish}
       initialValues={{
-        ...user1,
+        ...user,
       }}
     />
     </div>
