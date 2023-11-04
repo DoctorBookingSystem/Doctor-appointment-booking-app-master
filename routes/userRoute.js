@@ -275,9 +275,7 @@ router.post(
     try {
       const user = await User.findOne({ _id: req.body.userId });
       let decryptName = '';
-      console.log(user);
       if (user.email !== '283160a602594ecbd593521e55753243' ){
-        console.log(user.patientInfo.age+"This is their age.");
         decryptName = decryptData(user.name);
         decryptLName = decryptData(user.lastName);
         decryptPhoneNumber = decryptData(user.phoneNumber);
