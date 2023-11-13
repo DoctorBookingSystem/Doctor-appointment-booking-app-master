@@ -4,7 +4,6 @@
   font-family: 'Montserrat', sans-serif !important;
 }
 
-/* antd override */
 input {
   border-radius: 2px !important;
   border: 1px solid rgba(128, 128, 128, 0.521) !important;
@@ -19,7 +18,7 @@ input:focus,
 }
 
 .clickable-text {
-  color: blue; /* Change the color to your desired link color */
+  color: blue; 
   text-decoration: underline;
   cursor: pointer;
 }
@@ -31,7 +30,7 @@ input:focus,
 }
 
 .checkbox-text {
-  margin-left: 8px; /* Adjust the margin as needed */
+  margin-left: 8px; 
 }
 
 label {
@@ -232,13 +231,12 @@ p {
   background-color: #f2f2f2;
 }
 
-/* Add styling specific to the "risk-form" class */
 .risk-form {
   display: flex;
-  flex-direction: row; /* Change from column to row */
-  flex-wrap: wrap; /* Allow the items to wrap to the next line if needed */
-  justify-content: space-between; /* Add space between form fields */
-  max-width: 800px; /* Adjust the max-width as needed */
+  flex-direction: row; 
+  flex-wrap: wrap; 
+  justify-content: space-between; 
+  max-width: 800px; 
 }
 
 .risk-form label {
