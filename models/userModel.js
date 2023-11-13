@@ -34,6 +34,10 @@ const userSchema = new mongoose.Schema(
       type: Array,
       default: [],
     },
+    userLogs: {
+      type: Array,
+      default: [],
+    },
     resetCode: {
       type: String,
       default: null,
@@ -54,16 +58,48 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    accessAttempts: {
+      type: Number,
+      default: 0,
+    },
     agreedToTerms: {
       type: Boolean,
       default: false,
     },
-    pdfUrl: { 
-      type: String,
+    pdf: {
+      type: Array,
+      default:[],
     },
-    jpgUrl: { 
-      type: String,
+    jpg: {
+      type: Array,
+      default:[],
     },
+    patientInfo: {
+        type: Array,
+        default: [],
+    },
+    lastLoginDate: {
+      type: Date,
+      default: null,
+    },
+    loginCount: {
+      type: Number,
+      default: 0,
+    },
+    loginActivities: [
+      {
+        timestamp: {
+          type: Date,
+          default: Date.now,
+        },
+        ipAddress: {
+          type: String,
+        },
+        userAgent: {
+          type: String,
+        },
+      },
+    ],
   },
   {
     timestamps: true,

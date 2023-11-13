@@ -74,6 +74,25 @@ function DoctorsList() {
       dispatch(hideLoading());
     }
   };
+
+  const handleDownloadCertification = async (filename) => {
+    try {
+      const response = await axios.get(`/api/admin/download/${filename}`, {
+        responseType: "blob",
+      });
+
+      const blob = new Blob([response.data]);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error("Error downloading certification file");
+    }
+  };
   
   const columns = [
     {
@@ -95,8 +114,24 @@ function DoctorsList() {
       render: (record , text) => moment(record.createdAt).format("DD-MM-YYYY"),
     },
     {
-      title: "status",
+      title: "Status",
       dataIndex: "status",
+    },
+    {
+      title: "Certification",
+      dataIndex: "jpg",
+      render: (text, record) => (
+        <span>
+          {record.jpg && (
+            <Button
+              type="primary"
+              onClick={() => handleDownloadCertification(record.jpg)}
+            >
+              Download Certification
+            </Button>
+          )}
+        </span>
+      ),
     },
     {
       title: "Actions",

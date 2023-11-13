@@ -11,8 +11,13 @@ export const userSlice = createSlice({
     },
     clearUser: (state) => {
       state.user = null;
+      state.isDoctor = false;
+
+    },
+    setIsDoctor: (state, action) => {
+      state.isDoctor = action.payload;
     }
   },
 });
 
-export const { setUser, clearUser } = userSlice.actions;
+export const { setUser, clearUser, setIsDoctor } = userSlice.actions;

@@ -18,7 +18,10 @@ function Login() {
       const response = await axios.post("/api/user/login", values);
       dispatch(hideLoading());
       if (response.data.success) {
-        toast.success(response.data.message);
+        toast.success(response.data.message, {
+          duration: 5000, 
+        });
+        //toast.success(response.data.message);
         localStorage.setItem("token", response.data.data);
         navigate("/");
       } else {

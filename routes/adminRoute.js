@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const User = require("../models/userModel");
 const Doctor = require("../models/doctorModel");
+const path = require("path");
+const fs = require("fs");
 const authMiddleware = require("../middlewares/authMiddleware");
 
 router.get("/get-all-doctors", authMiddleware, async (req, res) => {
@@ -19,6 +21,29 @@ router.get("/get-all-doctors", authMiddleware, async (req, res) => {
       success: false,
       error,
     });
+  }
+});
+
+const UPLOADS_DIRECTORY = path.join(__dirname, "client/src/pages/Doctor/uploads/");
+
+router.get("/download/:filename", (req, res) => {
+  const { filename } = req.params;
+  console.log("UPLOADS_DIRECTORY:", UPLOADS_DIRECTORY);
+  console.log("filename:", filename);
+  const filePath = "client/src/pages/Doctor/uploads/" + filename;
+
+  // Check if the file exists
+  if (fs.existsSync(filePath)) {
+    // Set appropriate headers for the response
+    res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
+    res.setHeader("Content-Type", "application/octet-stream");
+
+    // Create a read stream from the file and pipe it to the response
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+  } else {
+    // If the file does not exist, return a 404 error
+    res.status(404).send("File not found");
   }
 });
 

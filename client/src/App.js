@@ -14,15 +14,20 @@ import PublicRoute from "./components/PublicRoute";
 import ApplyDoctor from "./pages/ApplyDoctor";
 import Notifications from "./pages/Notifications";
 import Userslist from "./pages/Admin/Userslist";
+import UserLogs from "./pages/Admin/UserLogs";
 import DoctorsList from "./pages/Admin/DoctorsList";
 import UserProfile from "./pages/UserProfile";
 import Profile from "./pages/Doctor/Profile";
-import PatientSummary from "./pages/Doctor/PatientSummary";
+import PatientSummary from "./pages/PatientSummary";
+import Certification from "./pages/Doctor/Certification";
 import AppointmentFeedback from "./pages/AppointmentFeedback";
+import SecureHealthInfo from "./pages/SecureHealthInfo";
+import HealthInformation from "./pages/HealthInformation";
 import Records from "./pages/Records";
 import BookAppointment from "./pages/BookAppointment";
 import Appointments from "./pages/Appointments";
 import DoctorAppointments from "./pages/Doctor/DoctorAppointments";
+import DoctorTerms from "./pages/DoctorTerms";
 
 function App() {
   const { loading } = useSelector((state) => state.alerts);
@@ -30,7 +35,7 @@ function App() {
     <BrowserRouter>
       {loading && (
         <div className="spinner-parent">
-          <div class="spinner-border" role="status"></div>
+          <div className="spinner-border" role="status"></div>
         </div>
       )}
       <Toaster position="top-center" reverseOrder={false} />
@@ -76,10 +81,18 @@ function App() {
           }
         />
         <Route
-          path="/terms"
+          path="/patient-terms"
           element={
             <PublicRoute>
               <TermsAndConditions />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/doctor-terms"
+          element={
+            <PublicRoute>
+              <DoctorTerms />
             </PublicRoute>
           }
         />
@@ -116,6 +129,22 @@ function App() {
           }
         />
         <Route
+          path="/secure-health-info"
+          element={
+            <ProtectedRoute>
+              <SecureHealthInfo />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/healthinformation"
+          element={
+            <ProtectedRoute>
+              <HealthInformation />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/notifications"
           element={
             <ProtectedRoute>
@@ -131,7 +160,14 @@ function App() {
             </ProtectedRoute>
           }
         />
-
+        <Route
+          path="/admin/userlogs"
+          element={
+            <ProtectedRoute>
+              <UserLogs />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/admin/doctorslist"
           element={
@@ -160,6 +196,16 @@ function App() {
         />
 
         <Route
+          path="/doctor/certification/:userId"
+          element={
+            <ProtectedRoute>
+              <Certification />
+            </ProtectedRoute>
+          }
+        />
+
+
+        <Route
           path="/book-appointment/:doctorId"
           element={
             <ProtectedRoute>
@@ -186,7 +232,7 @@ function App() {
         />
 
         <Route
-          path="/doctor/patientform"
+          path="/doctor/patientform/:userId"
           element={
             <ProtectedRoute>
               <PatientSummary />

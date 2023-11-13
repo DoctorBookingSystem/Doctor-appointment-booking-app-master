@@ -10,11 +10,8 @@ const moment = require("moment");
 const nodemailer = require('nodemailer');
 const crypto = require("crypto");
 const multer = require("multer");
-const mongoose = require("mongoose");
-const Grid = require("gridfs-stream");
-const conn = mongoose.connection;
-// const twilio = require('twilio');
-// const client = twilio('ACef9a35e24d6d0899ff7625a179d0345b', 'd8bfe24eb26ceb8e78309decbdea65e6');
+const path = require("path");
+const ClamScan = require('clamscan');
 const LOCK_TIME = 2 * 60 * 1000;
 
 router.post("/register", async (req, res) => {
@@ -151,11 +148,72 @@ router.post("/login", async (req, res) => {
     user.loginAttempts = 0;
     await user.save();
 
+    if (!user.lastLoginDate || !isSameDay(user.lastLoginDate, new Date())) {
+      user.loginCount = 1;
+    } else {
+      user.loginCount += 1;
+    }
+    user.lastLoginDate = new Date(); // Update last login date to current date
+    await user.save();
+
+    const adminEmail = "administrator@gmail.com";
+
+    const loginActivity = {
+      timestamp: new Date(),
+      ipAddress: req.ip, // Get user IP address from request
+      userAgent: req.get('User-Agent'), // Get user agent from request
+    };
+    user.loginActivities.push(loginActivity);
+    await user.save();
+
+    if (user.email !== adminEmail) {
+        user.unseenNotifications.push({
+          type: "new-login",
+          message: `Login from IP Address: ${loginActivity.ipAddress} at ${moment(loginActivity.timestamp).format('MMMM Do YYYY, h:mm:ss a')}`,
+          onClickPath: "/notifications", // Redirect path for the user
+        });
+
+        await user.save();
+    }
+
+      // Notify the admin about the user's login activity
+    if (user.email !== adminEmail) {
+      const adminUser = await User.findOne({ isAdmin: true, email: adminEmail });
+      if (adminUser) {
+        const userLogs = adminUser.userLogs;
+        userLogs.push({
+          type: "user-login",
+          message: `User ${user.name} (${user.email}) logged in from ${loginActivity.ipAddress} at ${moment(loginActivity.timestamp).format('MMMM Do YYYY, h:mm:ss a')}. Login Count: ${user.loginCount}`,
+          onClickPath: "/admin/userlogs",
+        });
+      
+        // Save admin user with the new notification
+        await adminUser.save();
+      }
+    }
     // Generate token and send success response
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1d",
     });
-    res.status(200).send({ message: "Login successful", success: true, data: token });
+
+    const isDifferentLocation = user.loginActivities.some((loginActivity) => {
+      return loginActivity.ipAddress !== req.ip || loginActivity.userAgent !== req.get('User-Agent');
+    });
+    
+    // If a different location login is detected, send a notification to the user
+    if (isDifferentLocation) {
+      user.unseenNotifications.push({
+        type: "new-login-location",
+        message: "Your account was logged in from a different location.",
+        onClickPath: "/notifications",
+      });
+      await user.save();
+    }
+
+    // Construct the login message
+    const loginMessage = `Login successful. Logged in at ${moment(loginActivity.timestamp).format('MMMM Do YYYY, h:mm:ss a')} from IP address: ${loginActivity.ipAddress}`;
+
+    res.status(200).send({ message: loginMessage, success: true, data: token });
   } catch (error) {
     console.error(error);
     res.status(500).send({ message: "Error logging in", success: false, error });
@@ -207,6 +265,14 @@ router.post("/forgot-password", async (req, res) => {
     res.status(500).send({ message: "Error sending reset code", success: false, error });
   }
 });
+
+function isSameDay(date1, date2) {
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
+  );
+}
 
 router.post("/verify-reset-code", async (req, res) => {
   try {
@@ -278,10 +344,117 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
+router.post("/validate-password", async (req, res) => {
+  const userEmail = "kumailkazmi14@gmail.com";
+
+  try {
+    const user = await User.findOne({ email: userEmail });
+
+    if (!user) {
+      return res.status(200).send({ message: "User does not exist", success: false });
+    }
+
+    // Check if access attempts are greater than or equal to 5
+    if (user.accessAttempts >= 5) {
+      user.unseenNotifications.push({
+        type: "breach-notify",
+        message: `An attempted breach at your Health Information was detected. Please change your password`,
+        onClickPath: "/notifications", // Redirect path for the user
+      });
+
+      user.accessAttempts = 0;
+
+      await user.save();
+
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: 'FIUDoctorBooking@gmail.com',
+          pass: 'dastwmvuhcvcddwj',
+        },
+      });
+
+      const mailOptions = {
+        from: 'FIUDoctorBooking@fiu.edu',
+        to: user.email, // Assuming user.email contains the recipient's email address
+        subject: 'Account Security Alert - Potential Breach Detected',
+        html: `<p>
+          Dear ${user.name},
+          <br><br>
+          We are writing to inform you about an important security event related to your account. Our security systems have detected multiple failed login attempts 
+          on your account. While your account remains secure, these unauthorized attempts raise concerns about the safety of your credentials. To maintain the security of your personal health data, we kindly request you to change your account password immediately.
+          <br><br>
+          You can reset your password by clicking on the "Forgot Password" link on the Login page. When creating a new password, please ensure it is strong and unique to enhance the security of your account.
+          <br><br>
+          We want to assure you that your personal health information is secure, and we are taking all necessary measures to protect your privacy. If you ever suspect any unusual activity or have questions about your account's security, 
+          please do not hesitate to reach out to us at fiuBookingSupport@gmail.com.
+          <br><br>
+          Sincerely,<br><br>
+          The FIU Doctor Booking Security Team
+          <br><br>
+          <img src="https://collegiaterecovery.org/wp-content/uploads/2022/02/FIU.png" alt="FIU Health Services" width="300" height="100">
+        </p>`,
+      };      
+
+      // Send the email
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.error('Error sending email:', error);
+          // Handle email sending error
+          return res.status(500).json({ success: false, message: "Error sending email" });
+        } else {
+          console.log('Email sent:', info.response);
+          // Email sent successfully, respond to the client
+          return res.status(200).json({ success: true, message: "Security email sent" });
+        }
+      });
+
+      return res.status(200).send({ message: "Breach Alert!!! Notification Sent", success: false });
+    }
+
+    const isMatch = await bcrypt.compare(req.body.password, user.password);
+
+    if (isMatch) {
+      // Password is correct
+      await user.save();
+      return res.status(200).send({ message: "Password is correct", success: true });
+    } else {
+      // Increment access attempts only if the password is incorrect
+      user.accessAttempts++;
+      await user.save();
+      // Password is incorrect
+      return res.status(200).send({ message: "Incorrect password. Please try again", success: false });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: "Error validating password", success: false, error });
+  }
+});
+
+
 router.post("/get-user-info-by-id", authMiddleware, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.body.userId });
-    user.password = undefined;
+    const name = user.name;
+    const email = user.email;
+    const number = user.phoneNumber;
+
+     const PatientInfo = user.patientInfo.map((info) => ({
+      age: info.age,
+      height: info.height,
+      weight: info.weight,
+      bronchitis: info.bronchitis,
+      diabetes: info.diabetes,
+      asthma: info.asthma,
+      high_blood_pressure: info.high_blood_pressure,
+      epilepsy_seizures: info.epilepsy_seizures
+    }));
+
+     user.patientInfo = PatientInfo;
+     user.name = name;
+     user.email = email;
+     user.phoneNumber = number;
+
     if (!user) {
       return res
         .status(200)
@@ -305,7 +478,7 @@ router.post("/get-user-info-by-user-id", authMiddleware, async (req, res) => {
     const user = await User.findOne({ _id: req.body.userId });
     res.status(200).send({
       success: true,
-      message: "Doctor info fetched successfully",
+      message: "User info fetched successfully",
       data: user,
     });
   } catch (error) {
@@ -414,6 +587,7 @@ router.post("/delete-all-notifications", authMiddleware, async (req, res) => {
   }
 });
 
+
 router.get("/get-all-approved-doctors", authMiddleware, async (req, res) => {
   try {
     const doctors = await Doctor.find({ status: "approved" });
@@ -449,6 +623,23 @@ router.post("/book-appointment", authMiddleware, async (req, res) => {
       onClickPath: "/doctor/appointments",
     });
     await user.save();
+
+    const adminEmail = "administrator@gmail.com";
+
+    if (req.body.userInfo.email !== adminEmail) {
+      const adminUser = await User.findOne({ isAdmin: true, email: adminEmail });
+      if (adminUser) {
+        const userLogs = adminUser.userLogs;
+        userLogs.push({
+          type: "user-appointment",
+          message: `User ${req.body.userInfo.name} (${req.body.userInfo.email}) booked an appointment with Dr. ${user.name} for ${moment(req.body.date).format('MMMM Do YYYY')}`,
+          onClickPath: "/admin/userlogs",
+        });
+      
+        // Save admin user with the new notification
+        await adminUser.save();
+      }
+    }
 
     // Send appointment confirmation email
     const transporter = nodemailer.createTransport({
@@ -554,64 +745,133 @@ router.get("/get-appointments-by-user-id", authMiddleware, async (req, res) => {
   }
 });
 
-// Initialize GridFS
-Grid.mongo = mongoose.mongo;
-let gfs;
 
-conn.once("open", () => {
-  gfs = Grid(conn.db);
-});
-
-// Multer storage configuration
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
-
-// File upload endpoint
-router.post("/upload-files", upload.fields([{ name: "pdfFile", maxCount: 1 }, { name: "jpgFile", maxCount: 1 }]), async (req, res) => {
+router.post('/updatePatientInfo', async (req, res) => {
   try {
-    const { pdfFile, jpgFile } = req.files;
+    const formData = req.body; 
+    const user = await User.findOne({ _id: formData.userId });
+    const phoneNumber = formData.phoneNumber;
+    const Age = formData.age;
+    const Height = formData.height;
+    const Weight = formData.weight;
+    const Bronchitis = formData.bronchitis;
+    const HighBloodPressure = formData.high_blood_pressure;
+    const Asthma = formData.asthma;
+    const Diabetes = formData.diabetes;
+    const EpilepsySeizures = formData.epilepsy_seizures;
+  
 
-    // Store PDF file in GridFS
-    const pdfWriteStream = gfs.createWriteStream({
-      filename: pdfFile[0].originalname,
-    });
-    pdfWriteStream.write(pdfFile[0].buffer);
-    pdfWriteStream.end();
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
-    // Store JPG file in GridFS
-    const jpgWriteStream = gfs.createWriteStream({
-      filename: jpgFile[0].originalname,
-    });
-    jpgWriteStream.write(jpgFile[0].buffer);
-    jpgWriteStream.end();
+    user.phoneNumber = phoneNumber;
+    //user.request = false;
 
-    // Save PDF and JPG URLs in user document
-    const pdfUrl = `/file/${pdfWriteStream._id}`;
-    const jpgUrl = `/file/${jpgWriteStream._id}`;
+    // const auditChangesEntry = new AuditChanges({
+    //   userId: user._id,
+    //   email: decryptedEmail, 
+    //   action: 'PHI Changes Made.',
+    // });
+    // await auditChangesEntry.save();
 
-    // Update user with file URLs
-    const user = await User.findByIdAndUpdate(req.body.user._id, {
-      pdfUrl: user.pdfUrl,
-      jpgUrl: user.jpgUrl,
-    });
+    if (user.patientInfo.length === 0) {
+      user.patientInfo.push({
+        age: Age,
+        height: Height,
+        weight: Weight,
+        bronchitis: Bronchitis,
+        asthma: Asthma,
+        high_blood_pressure: HighBloodPressure,
+        diabetes: Diabetes,
+        epilepsy_seizures: EpilepsySeizures,
+      });
+    } else {
+      await User.updateOne(
+        { _id: formData.userId },
+        {
+          $set: {
+            'phoneNumber': phoneNumber,
+            'patientInfo.0.age': Age,
+            'patientInfo.0.height': Height,
+            'patientInfo.0.weight': Weight,
+            'patientInfo.0.bronchitis': Bronchitis,
+            'patientInfo.0.asthma': Asthma,
+            'patientInfo.0.high_blood_pressure': HighBloodPressure,
+            'patientInfo.0.diabetes': Diabetes,
+            'patientInfo.0.epilepsy_seizures': EpilepsySeizures,
+          },
+        }
+      );
+    }
+    await user.save();
 
-    res.status(200).send({ message: "Files uploaded successfully", success: true });
+    res.status(201).json({ message: 'Your information has been saved.', data: user });
   } catch (error) {
-    console.error(error);
-    res.status(500).send({ message: "Error uploading files", success: false, error });
+    console.error('Error adding form data:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
-// // Serve files from GridFS
-// router.get("/file/:fileId", (req, res) => {
-//   const fileId = req.params.fileId;
-//   const readStream = gfs.createReadStream({ _id: fileId });
+// Multer configuration for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "client/uploads/"); // Folder where files will be saved
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname);
+    cb(null, Date.now() + ext); // Rename the file with timestamp to avoid name conflicts
+  },
+});
 
-//   readStream.on("error", (err) => {
-//     res.status(404).send("File not found");
-//   });
+const upload = multer({ storage: storage });
+const clamscan = new ClamScan();
 
-//   readStream.pipe(res);
-// });
+router.post("/upload-files", upload.fields([{ name: "pdfFile" }, { name: "jpgFile" }]), async (req, res) => {
+  try {
+
+    const { pdfFile, jpgFile } = req.files;
+
+
+     // Get user ID from request body or wherever you are passing it
+     const userId = req.body.userId; // Assuming userId is passed in the request body
+
+     // Check if files are null, if so, set them as empty arrays
+     const pdfFileName = pdfFile;
+     const jpgFileName = jpgFile;
+ 
+     // Update the user document in the database with file names
+     await User.findByIdAndUpdate(userId, { pdf: pdfFileName, jpg: jpgFileName });
+
+     res.status(200).send({
+       message: "Files uploaded successfully. No viruses detected",
+       success: true,
+       data: {
+         pdfFileName,
+         jpgFileName,
+       },
+     });
+   } catch (error) {
+     console.error(error);
+     res.status(500).send({ message: "Error uploading files", success: false, error });
+   }
+});
+
+async function scanFile(file) {
+  return new Promise((resolve, reject) => {
+    clamscan.scan(file.path, (err, object, malicious) => {
+      if (err) {
+        reject(err);
+      } else if (malicious) {
+        // File is infected, handle accordingly
+        reject(new Error('Infected file detected'));
+      } else {
+        // File is clean
+        resolve('File is clean. No viruses detected.');
+      }
+    });
+  });
+}
+
 
 module.exports = router;

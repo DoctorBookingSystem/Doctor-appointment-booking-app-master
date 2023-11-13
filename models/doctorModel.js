@@ -44,7 +44,71 @@ const doctorSchema = new mongoose.Schema(
     status: {
       type: String,
       default: "approved",
-    }
+    },
+    jpg: {
+      type: String,
+      default: null,
+    },
+    patientName: {
+      type: String,
+      default: null,
+    },
+    patientNumber: {
+      type: String,
+      default: null,
+    },
+    patientEmail: {
+      type: String,
+      default: null,
+    },
+    patientDOB: {
+      type: String,
+      default: null,
+    },
+    patientGender: {
+      type: String,
+      default: null,
+    },
+    reasonForVisit: {
+      type: String,
+      default: null,
+    },
+    dateofVisit: {
+      type: String,
+      default: null,
+    },
+    medicalCondition: {
+      type: String,
+      default: null,
+    },
+    allergies: {
+      type: String,
+      default: null,
+    },
+    medications: {
+      type: String,
+      default: null,
+    },
+    doctorName: {
+      type: String,
+      default: null,
+    },
+    doctorNumber: {
+      type: String,
+      default: null,
+    },
+    doctorWebsite: {
+      type: String,
+      default: null,
+    },
+    electronicSignature: {
+      type: String,
+      default: null,
+    },
+    dateSigned: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,

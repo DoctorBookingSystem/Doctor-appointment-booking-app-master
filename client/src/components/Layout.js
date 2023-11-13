@@ -42,7 +42,12 @@ function Layout({ children }) {
       name: "Feedback",
       path: "/feedback",
       icon: "ri-hospital-line",
-    }
+    },
+    {
+      name: "My Health Information",
+      path: "/secure-health-info",
+      icon: "ri-file-list-line",
+    },
   ];
 
   const doctorMenu = [
@@ -62,8 +67,13 @@ function Layout({ children }) {
       icon: "ri-user-line",
     },
     {
-      name:"Forms",
-      path: "/doctor/patientform",
+      name: "Forms",
+      path: `/doctor/patientform/${user?._id}`,
+      icon: "ri-file-list-line",
+    },
+    {
+      name: "Documents",
+      path: `/doctor/certification/${user?._id}`,
       icon: "ri-file-list-line",
     }
   ];
@@ -77,6 +87,11 @@ function Layout({ children }) {
     {
       name: "Users",
       path: "/admin/userslist",
+      icon: "ri-user-line",
+    },
+    {
+      name: "User Logs",
+      path: "/admin/userlogs",
       icon: "ri-user-line",
     },
     {
