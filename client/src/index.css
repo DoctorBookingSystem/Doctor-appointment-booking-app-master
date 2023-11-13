@@ -203,3 +203,63 @@ p {
 .search-bar button:hover {
   background-color: #007bff;
 }
+
+/* RiskAssessmentTable.css */
+
+.form {
+  margin-bottom: 20px;
+}
+
+.table-title {
+  font-size: 24px;
+  margin-bottom: 10px;
+  padding-top:30px;
+}
+
+.risk-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.risk-table th, .risk-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.risk-table th {
+  background-color: #f2f2f2;
+}
+
+/* Add styling specific to the "risk-form" class */
+.risk-form {
+  display: flex;
+  flex-direction: row; /* Change from column to row */
+  flex-wrap: wrap; /* Allow the items to wrap to the next line if needed */
+  justify-content: space-between; /* Add space between form fields */
+  max-width: 800px; /* Adjust the max-width as needed */
+}
+
+.risk-form label {
+  margin-bottom: 10px;
+}
+
+.risk-form input,
+.risk-form select {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+}
+
+.risk-form button {
+  padding: 10px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.risk-form button:hover {
+  background-color: #45a049;
+}

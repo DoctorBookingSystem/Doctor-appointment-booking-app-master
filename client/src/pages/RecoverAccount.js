@@ -10,7 +10,7 @@ function Recover() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [tempEnteredPW, setTempEnteredPW] = useState("");
-  const [temporaryPassword, setTemporaryPassword] = useState("");
+  const [tempPW, setTemporaryPassword] = useState("");
   const [step, setStep] = useState(1);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -39,6 +39,7 @@ function Recover() {
         const response = await axios.post("/api/user/temp-password", {email});
         if (response.data.success) {
           setLoading(false);
+          console.log(response.data.data);
           setTemporaryPassword(response.data.data);
           setStep(2);
           toast.success(response.data.message);
@@ -50,13 +51,14 @@ function Recover() {
       if (step === 2) {
         setLoading(true);
         try {
-          // const response = await axios.post("/api/user/verify-temp-password", {
-          //   email,
-          // });
           checkPasswordStrength(password);
-          if (tempEnteredPW === tempEnteredPW && passwordValidation.isValid) {
+          const tempPWString = ""+tempPW;
+          if (tempEnteredPW === tempPWString && passwordValidation.isValid) {
+            axios.post("/api/user/verify-temp-password", {
+              email, password
+            });
             setLoading(false);
-            toast.success("Your account has been recovered.");
+            toast.success("Your account has been recovered!");
             navigate("/");
           } else {
             setLoading(false);
@@ -103,7 +105,7 @@ function Recover() {
               style={{ width: '100%' }}
             />
             <Form.Item
-              label="Password"
+              label="New Password"
               name="password"
               validateStatus={passwordValidation.isValid ? "success" : "error"}
               help={passwordValidation.message}

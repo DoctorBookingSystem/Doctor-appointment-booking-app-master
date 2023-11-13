@@ -105,24 +105,6 @@ function BookAppointment() {
 
   const checkAvailability = async () => {
     
-    const today = new Date();
-    const currMonth = today.getMonth()+1;
-    const currYear = today.getFullYear();
-    const currDay = today. getDate();
-
-    const dayPick = moment(date, "DD-MM-YYYY").format("DD");
-    const monthPick = moment(date, "DD-MM-YYYY").format("MM");
-    const yearPick = moment(date, "DD-MM-YYYY").format("YYYY");
-
-    //check if the date and time set by the user is a valid date and time
-    if (currMonth < monthPick && currYear <= yearPick && time > doctor.timings[0] && time.includes("pm") && doctor.timings[0].includes("pm") && time < doctor.timings[1] && doctor.timings[1].includes("pm")){
-      console.log("valid");
-    }
-    else if (currMonth === monthPick && currDay <= dayPick && currYear <= yearPick && time > doctor.timings[0] && time.includes("pm") && doctor.timings[0].includes("pm") && time < doctor.timings[1] && doctor.timings[1].includes("pm")){
-      console.log("valid");
-    }else{
-    }
-
     try {
       dispatch(showLoading());
       const response = await axios.post(
@@ -227,18 +209,19 @@ function BookAppointment() {
               </p>
               <div className="d-flex flex-column pt-2 mt-2">
                 <DatePicker
-                  format="DD-MM-YYYY"
+                  format="MM-DD-YYYY"
                   onChange={(value) => {
-                    setDate(moment(value).format("DD-MM-YYYY"));
+                    setDate(moment(value).format("MM-DD-YYYY"));
                     setIsAvailable(false);
                   }}
                 />
                 <TimePicker
                   format="h:mm a"
                   className="mt-3"
+                  minuteStep={15} 
                   onChange={(value) => {
                     setIsAvailable(false);
-                    setTime(moment(value).format("h:mm a"));
+                    setTime(moment(value).format("h:mm A"));
                   }}
                 />
               {!isAvailable &&   <Button

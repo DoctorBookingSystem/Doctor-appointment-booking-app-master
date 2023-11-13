@@ -58,8 +58,8 @@ router.post("/login" , async (req, res) => {
   try {
     const enteredEmail = req.body.email; 
     const encryptedEnteredEmail = encryptData(enteredEmail);
-    const crypt = decryptData("28898db024c636134978dd230fd1b282");
-    console.log(crypt);
+   // const crypt = decryptData("28898db024c636134978dd230fd1b282");
+   // console.log(crypt);
     let secret = "";
     secret = speakeasy.generateSecret({ length: 20 }).base32;
     const user = await User.findOne({ email: encryptedEnteredEmail });
@@ -275,7 +275,7 @@ router.post(
     try {
       const user = await User.findOne({ _id: req.body.userId });
       let decryptName = '';
-      if (user.email !== '283160a602594ecbd593521e55753243' ){
+      if (user.email !== '283160a602594ecbd593521e55753243' && user.isDoctor != true){
         decryptName = decryptData(user.name);
         decryptLName = decryptData(user.lastName);
         decryptPhoneNumber = decryptData(user.phoneNumber);
@@ -418,11 +418,11 @@ router.get("/get-all-approved-doctors", authMiddleware, async (req, res) => {
 router.post("/book-appointment", authMiddleware, async (req, res) => {
   try {
     req.body.status = "pending";
-    req.body.date = moment(req.body.date, "DD-MM-YYYY").toISOString();
-    req.body.time = moment(req.body.time, "HH:mm").toISOString();
+    req.body.date = moment(req.body.date, "MM-DD-YYYY").format("MM-DD-YYYY");
+    req.body.time = moment(req.body.time, "h:mm A").format("h:mm A");
+
     const newAppointment = new Appointment(req.body);
     await newAppointment.save();
-    //pushing notification to doctor based on his userid
     const user = await User.findOne({ _id: req.body.doctorInfo.userId });
     const userConsent = await User.findOne({ _id: req.body.userInfo._id });
     userConsent.consent = true;
@@ -450,37 +450,59 @@ router.post("/book-appointment", authMiddleware, async (req, res) => {
 
 router.post("/check-booking-avilability", authMiddleware, async (req, res) => {
   try {
-    const date = moment(req.body.date, "DD-MM-YYYY").toISOString();
-    const fromTime = moment(req.body.time, "h:mm a")
-      .subtract(1, "hours")
-      .toISOString();
-    const toTime = moment(req.body.time, "h:mm a").add(1, "hours").toISOString();
+    const date = moment(req.body.date, "MM-DD-YYYY").format("MM-DD-YYYY");
+    const time = moment(req.body.time, "h:mm A");
+    const combinedDateTime = moment(`${date} ${time}`, "MM-DD-YYYY h:mm A");
+    const today = moment().startOf('day');
+    const isBefore = combinedDateTime.isBefore(today);
     const doctorId = req.body.doctorId;
-    const appointments = await Appointment.find({
-      doctorId,
-      date,
-      time: { $gte: fromTime, $lte: toTime },
+    const doctor = await Doctor.findOne({ _id: doctorId });
+    
+    if (Array.isArray(doctor.timings) && doctor.timings.length >= 2) {
+        const [doctorStartTime, doctorEndTime] = doctor.timings.map(times => moment(times, "h:mm A"));
+        const appointments = await Appointment.find({
+          doctorId,
+          date,
+          time: { $gte: time, $lte: time },
+        });    
+
+        if (doctorStartTime.isAfter(time, "h:mmm A") || doctorEndTime.isBefore(time, "h:mm A")) {
+          return res.status(200).send({
+              message: "Invalid appointment time",
+              success: false,
+          });
+        } else if (isBefore) {
+            return res.status(200).send({
+                message: "Invalid date",
+                success: false,
+            });
+        } else if (appointments.length > 0) {
+              return res.status(200).send({
+              message: "This date and time is booked",
+              success: false,
+            });
+          } else {
+            return res.status(200).send({
+              message: "Appointments available",
+              success: true,
+            });
+          }
+        }
+        else {
+            return res.status(200).send({
+                message: "Appointments available",
+                success: true,
+            });
+        }
+      } catch (error) {
+        console.log(error);
+        res.status(500).send({
+          message: "Error booking appointment",
+          success: false,
+          error,
+        });
+      }
     });
-    if (appointments.length > 0) {
-      return res.status(200).send({
-        message: "Appointments not available",
-        success: false,
-      });
-    } else {
-      return res.status(200).send({
-        message: "Appointments available",
-        success: true,
-      });
-    }
-  } catch (error) {
-    console.log(error);
-    res.status(500).send({
-      message: "Error booking appointment",
-      success: false,
-      error,
-    });
-  }
-});
 
 router.get("/get-appointments-by-user-id", authMiddleware, async (req, res) => {
   try {
@@ -532,8 +554,8 @@ router.post("/verify-2fa", async (req, res) => {
         from: 'FIUDoctorBooking@fiu.edu',
         to: decryptedEmail, 
         subject: 'Logged in successfully.',
-        html: `<p>You have successfully signed into your FIU Doctor Booking account. If you did not sign in, <a href="https://localhost:3000/recover-account">click here</a> to recover your account.</p>`,
-        text: `You have successfully signed into your FIU Doctor Booking account. If you did not sign in, <a href="https://localhost:3000/recover-account">click here</a> to recover your account.`,
+        html: `<p>You have successfully signed into your FIU Doctor Booking account. If you did not sign in, <a href="http://localhost:3000/recover-account">click here</a> to recover your account.</p>`,
+        text: `You have successfully signed into your FIU Doctor Booking account. If you did not sign in, <a href="http://localhost:3000/recover-account">click here</a> to recover your account.`,
       }
 
       transporter.sendMail(mailOptions, (error, info) => {
@@ -564,7 +586,6 @@ router.post("/verify-2fa", async (req, res) => {
 router.post('/updatePatientInfo', async (req, res) => {
   try {
     const formData = req.body; 
-    //console.log(formData.patientInfo[0].age);
     const user = await User.findOne({ _id: formData.userId });
     const encryptedNumber = encryptData(formData.phoneNumber);
     const encryptedAge = encryptData(formData.patientInfo[0].age);
@@ -851,7 +872,7 @@ router.post("/temp-password", async (req, res) => {
 
     if (!user) {
       return res.status(200).send({
-        message: "Invalid or expired reset code",
+        message: "Invalid user.",
         success: false,
       });
     }
@@ -878,13 +899,14 @@ router.post("/temp-password", async (req, res) => {
       } else {
         console.log('Email sent:', info.response);
         // Email sent successfully, respond to the client
-        return res.status(200).json({ success: true, message: "Temporary password sent", data: random, });
+        return res.status(200).json({ success: true, message: "Temporary password sent", });
       }
     });
 
     res.status(200).send({
-      message: "Email sent successfully",
+      message: "Email sent.",
       success: true,
+      data: random
     });
   } catch (error) {
     console.error(error);
@@ -898,26 +920,17 @@ router.post("/temp-password", async (req, res) => {
 
 router.post("/verify-temp-password", async (req, res) => {
   try {
-    const user = await User.findOne({
-
-    });
+    encryptedEmail = encryptData(req.body.email);
+    const user = await User.findOne({ email: encryptedEmail });
     if (!user) {
-      return res.status(200).send({
-        message: "Invalid temporary password.",
-        success: false,
-      });
+      console.log("invalid user.");
     }
-    res.status(200).send({
-      message: "Reset code verified successfully",
-      success: true,
-    });
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(req.body.password, salt);
+    user.password = hashedPassword;
+    await user.save();
   } catch (error) {
     console.error(error);
-    res.status(500).send({
-      message: "Error verifying reset code",
-      success: false,
-      error,
-    });
   }
 });
 

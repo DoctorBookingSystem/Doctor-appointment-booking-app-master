@@ -4,6 +4,8 @@ const User = require("../models/userModel");
 const Doctor = require("../models/doctorModel");
 const authMiddleware = require("../middlewares/authMiddleware");
 const { updateTwoFactorSecret, encryptData, decryptData } = require('./services');
+const Risk = require("../models/riskAssessmentModel");
+
 
 router.get("/get-all-doctors", authMiddleware, async (req, res) => {
   try {
@@ -144,5 +146,49 @@ router.post("/revokeAccess", async (req, res) => {
     }
   }
 );
+
+router.post("/add_risk", async (req, res) => {
+  try {
+    const { risk_id, description, impact_level, probability_level, resolve, completed } = req.body;
+    const riskAssessmentEntry = new Risk({
+      risk_id: risk_id,
+      description: description, 
+      impact_level: impact_level, 
+      probability_level: probability_level, 
+      resolve: resolve, 
+      completed: completed, 
+      action: 'New Risk Added.',
+    });
+    await riskAssessmentEntry.save();
+    res.status(200).send({
+      message: `Risk saved.`,
+      success: true,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      message: "There was an error adding a risk.",
+      success: false,
+      error,
+    });
+  }
+}
+);
+
+router.get('/get_risks', async (req, res) => {
+  try {
+    const risks = await Risk.find();
+    res.status(200).json({
+      success: true,
+      data: risks,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      error: 'Error fetching risks from the database.',
+    });
+  }
+});
 
 module.exports = router;

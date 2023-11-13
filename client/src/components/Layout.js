@@ -74,6 +74,11 @@ function Layout({ children }) {
       path: "/admin/doctorslist",
       icon: "ri-user-star-line",
     },
+    {
+      name: "Risk Assessment",
+      path: "/admin/RiskAssessment",
+      icon: "ri-user-star-line",
+    },
     // {
     //   name: "Profile",
     //   path: "/profile",

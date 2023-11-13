@@ -16,6 +16,7 @@ import Profile from "./pages/Doctor/Profile";
 import BookAppointment from "./pages/BookAppointment";
 import Appointments from "./pages/Appointments";
 import DoctorAppointments from "./pages/Doctor/DoctorAppointments";
+import RiskAssessment from "./pages/Admin/RiskAssessment";
 import HealthInformation from "./pages/HealthInformation";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
@@ -159,7 +160,16 @@ function App() {
             </PublicRoute>
           }
         />
+        <Route
+          path="/Admin/RiskAssessment"
+          element={
+            <ProtectedRoute>
+              <RiskAssessment />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
+
       </>
   // </BrowserRouter>
   );

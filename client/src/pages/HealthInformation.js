@@ -37,7 +37,6 @@ function HealthInformation() {
       dispatch(hideLoading());
       if (response.data.success) {
         toast.success(response.data.message);
-        console.log(response);
       } else {
         toast.error(response.data.message);
       }
@@ -96,7 +95,6 @@ function HealthInformation() {
 
       dispatch(hideLoading());
       if (response.data.success) {
-        console.log("success");
         setUser1(user);
       }
     } catch (error) {
