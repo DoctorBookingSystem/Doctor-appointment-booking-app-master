@@ -39,11 +39,6 @@ function Layout({ children }) {
       icon: "ri-user-line",
     },
     {
-      name: "Feedback",
-      path: "/feedback",
-      icon: "ri-hospital-line",
-    },
-    {
       name: "My Health Information",
       path: "/secure-health-info",
       icon: "ri-file-list-line",
