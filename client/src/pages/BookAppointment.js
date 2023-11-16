@@ -100,7 +100,7 @@ function BookAppointment() {
   };
 
   const handleCheckboxChange = () => {
-    setIsChecked(!isChecked); // Toggle the checkbox state
+    setIsChecked(!isChecked); 
   };
 
   const checkAvailability = async () => {
@@ -208,10 +208,12 @@ function BookAppointment() {
                 {doctor.website}
               </p>
               <div className="d-flex flex-column pt-2 mt-2">
+              {!isAvailable && (
+                <>
                 <DatePicker
                   format="MM-DD-YYYY"
                   onChange={(value) => {
-                    setDate(moment(value).format("MM-DD-YYYY"));
+                    setDate(moment(new Date(value)).format("MM-DD-YYYY"));
                     setIsAvailable(false);
                   }}
                 />
@@ -221,19 +223,23 @@ function BookAppointment() {
                   minuteStep={15} 
                   onChange={(value) => {
                     setIsAvailable(false);
-                    setTime(moment(value).format("h:mm A"));
+                    setTime(moment(value, "h:mm A").format("h:mm A"));
                   }}
-                />
-              {!isAvailable &&   <Button
+                />  
+                <Button
                   className="primary-button mt-3 full-width-button"
                   onClick={checkAvailability}
                 >
                   Check Availability
-                </Button>}
+                </Button>
+                </>
+                )}
 
                 {isAvailable && (
                     <>
                     <p>
+                      Your appointment is on {date} at {time}
+                      <br></br><br></br>
                       <b>
                         <a href="#" onClick={openPopup}>Please read the health information consent agreement.</a>
                       </b>
@@ -251,7 +257,8 @@ function BookAppointment() {
                   <Button
                     className="primary-button mt-3 full-width-button"
                     onClick={bookNow}
-                    disabled={!isChecked} 
+                    disabled={!isChecked}
+
                   >
                     Book Now
                   </Button>

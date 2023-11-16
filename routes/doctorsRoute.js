@@ -82,7 +82,9 @@ router.post("/change-appointment-status", authMiddleware, async (req, res) => {
     const appointment = await Appointment.findByIdAndUpdate(appointmentId, {
       status,
     });
-
+    if (status === 'rejected'){
+      await Appointment.findByIdAndRemove(appointmentId);
+    }
     const user = await User.findOne({ _id: appointment.userId });
     const unseenNotifications = user.unseenNotifications;
     unseenNotifications.push({

@@ -111,7 +111,11 @@ function Appointments() {
       title: "Actions",
       dataIndex: "_id",
       render: (text, record) => (
-        <span className="clickable-text" onClick={() => handleCancelAppointment(record._id, record.doctorInfo.userId)}>Cancel</span>
+        record.status !== 'rejected' ? (
+          <span className="clickable-text" onClick={() => handleCancelAppointment(record._id, record.doctorInfo.userId)}>
+            Cancel
+          </span>
+        ) : null
       ),
     }
   ];

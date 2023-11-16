@@ -340,7 +340,7 @@ router.post("/delete-all-notifications", authMiddleware, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.body.userId });
     let decryptName = '';
-    if (user.email !== '283160a602594ecbd593521e55753243' ){
+    if (user.email !== '283160a602594ecbd593521e55753243' && user.isDoctor != true ){
       decryptName = decryptData(user.name);
       decryptLName = decryptData(user.lastName);
       decryptPhoneNumber = decryptData(user.phoneNumber);
@@ -450,35 +450,44 @@ router.post("/book-appointment", authMiddleware, async (req, res) => {
 
 router.post("/check-booking-avilability", authMiddleware, async (req, res) => {
   try {
-    const date = moment(req.body.date, "MM-DD-YYYY").format("MM-DD-YYYY");
-    const time = moment(req.body.time, "h:mm A");
-    const combinedDateTime = moment(`${date} ${time}`, "MM-DD-YYYY h:mm A");
-    const today = moment().startOf('day');
-    const isBefore = combinedDateTime.isBefore(today);
-    const doctorId = req.body.doctorId;
-    const doctor = await Doctor.findOne({ _id: doctorId });
-    
-    if (Array.isArray(doctor.timings) && doctor.timings.length >= 2) {
-        const [doctorStartTime, doctorEndTime] = doctor.timings.map(times => moment(times, "h:mm A"));
-        const appointments = await Appointment.find({
-          doctorId,
-          date,
-          time: { $gte: time, $lte: time },
-        });    
+        const date = req.body.date;
+        const time = req.body.time;
+        const combinedDateTime = moment(`${date} ${time}`);
+        const today = moment().startOf('day');
+        const isBefore = combinedDateTime.isBefore(today);
+        const doctorId = req.body.doctorId;
+        const doctor = await Doctor.findOne({ _id: doctorId });
 
-        if (doctorStartTime.isAfter(time, "h:mmm A") || doctorEndTime.isBefore(time, "h:mm A")) {
-          return res.status(200).send({
+        if (!date || !time || date === "Invalid date" || time === "Invalid date") {
+          return res.status(400).send({
+            message: "Invalid date or time",
+            success: false,
+          });
+        }
+
+        if (Array.isArray(doctor.timings) && doctor.timings.length >= 2) {
+          const [doctorStartTime, doctorEndTime] = doctor.timings.map(times => moment(times, "h:mm A"));
+          const appointments = await Appointment.find({
+            doctorId,
+            date,
+            time: time,
+          });    
+          if (
+            doctorStartTime.isAfter(moment(time, "h:mm A")) ||
+            doctorEndTime.isBefore(moment(time, "h:mm A")) 
+          ) {
+            return res.status(200).send({
               message: "Invalid appointment time",
               success: false,
-          });
-        } else if (isBefore) {
-            return res.status(200).send({
-                message: "Invalid date",
-                success: false,
             });
-        } else if (appointments.length > 0) {
-              return res.status(200).send({
-              message: "This date and time is booked",
+          } else if (isBefore) {
+            return res.status(200).send({
+              message: "Invalid date",
+              success: false,
+            });
+          } else if (appointments.length > 0) {
+            return res.status(200).send({
+              message: "This date and time is not available",
               success: false,
             });
           } else {
@@ -486,23 +495,17 @@ router.post("/check-booking-avilability", authMiddleware, async (req, res) => {
               message: "Appointments available",
               success: true,
             });
-          }
+          }          
         }
-        else {
-            return res.status(200).send({
-                message: "Appointments available",
-                success: true,
+        }catch (error) {
+            console.log(error);
+            res.status(500).send({
+              message: "Error booking appointment",
+              success: false,
+              error,
             });
         }
-      } catch (error) {
-        console.log(error);
-        res.status(500).send({
-          message: "Error booking appointment",
-          success: false,
-          error,
-        });
-      }
-    });
+});
 
 router.get("/get-appointments-by-user-id", authMiddleware, async (req, res) => {
   try {
