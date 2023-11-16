@@ -94,12 +94,7 @@ function HealthInformation() {
 
       dispatch(hideLoading());
       if (response.data.success) {
-<<<<<<< HEAD
-        setUser1(response.data.data);
-        console.log(user1);
-=======
         setUser1(user);
->>>>>>> jk_code
       }
     } catch (error) {
       console.log(error);
