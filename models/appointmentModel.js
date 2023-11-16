@@ -28,7 +28,11 @@ const appointmentSchema = new mongoose.Schema(
     status: {
       type: String,
       required: true,
+<<<<<<< HEAD
       default: "approved",
+=======
+      default: "pending",
+>>>>>>> jk_code
     },
   },
   {
@@ -36,5 +40,9 @@ const appointmentSchema = new mongoose.Schema(
   }
 );
 
+<<<<<<< HEAD
 const appointmentModel = mongoose.model("appointmenst", appointmentSchema);
+=======
+const appointmentModel = mongoose.model("appointments", appointmentSchema);
+>>>>>>> jk_code
 module.exports = appointmentModel;

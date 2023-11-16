@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../layout.css";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { Badge } from "antd";
-import { clearUser } from "../redux/userSlice"
-//import UserProfile from "../pages/UserProfile";
+import { clearUser } from "../redux/userSlice";
+import toast from "react-hot-toast";
 
 function Layout({ children }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -41,11 +41,14 @@ function Layout({ children }) {
     {
       name: "Feedback",
       path: "/feedback",
+      name: "Health Tips",
+      path: "https://www.healthline.com/nutrition/27-health-and-nutrition-tips#bright-lights",
       icon: "ri-hospital-line",
     },
     {
       name: "My Health Information",
       path: "/secure-health-info",
+      path: "/healthinformation",
       icon: "ri-file-list-line",
     },
   ];
@@ -75,6 +78,9 @@ function Layout({ children }) {
       name: "Documents",
       path: `/doctor/certification/${user?._id}`,
       icon: "ri-file-list-line",
+      name: "Apply Doctor",
+      path: "/apply-doctor",
+      icon: "ri-hospital-line",
     }
   ];
 
@@ -99,6 +105,11 @@ function Layout({ children }) {
       path: "/admin/doctorslist",
       icon: "ri-user-star-line",
     },
+    {
+      name: "Risk Assessment",
+      path: "/admin/RiskAssessment",
+      icon: "ri-user-star-line",
+    },
     // {
     //   name: "Profile",
     //   path: "/profile",
@@ -108,6 +119,48 @@ function Layout({ children }) {
 
   const menuToBeRendered = user?.isAdmin ? adminMenu : user?.isDoctor ? doctorMenu : userMenu;
   const role = user?.isAdmin ? "Admin" : user?.isDoctor ? "Doctor" : "User";
+  const token = localStorage.getItem("token");
+
+  const checkForActivity = () => {
+    const expireTime = localStorage.getItem("expireTime");
+    if (expireTime < Date.now()){
+      localStorage.clear();
+      dispatch(clearUser());
+      navigate("/login");
+      //toast.error("You were logged out due to inactivity.");
+      window.location.reload();
+    }
+  }
+
+  const updateExpireTime = () =>{
+    const expireTime = Date.now() + 900000;
+    localStorage.setItem("expireTime", expireTime);
+  }
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      checkForActivity();
+    },5000);
+  },[]);
+
+  useEffect(() => {
+    if (token)
+      updateExpireTime();
+    
+    window.addEventListener("click", updateExpireTime);
+    window.addEventListener("keypress", updateExpireTime);
+    window.addEventListener("scroll", updateExpireTime);
+    window.addEventListener("mousemove", updateExpireTime);
+
+    return () =>{
+      window.addEventListener("click", updateExpireTime);
+      window.addEventListener("keypress", updateExpireTime);
+      window.addEventListener("scroll", updateExpireTime);
+      window.addEventListener("mousemove", updateExpireTime);
+    }
+
+  }, []);
+
   return (
     <div className="main">
       <div className="d-flex layout">
@@ -128,6 +181,15 @@ function Layout({ children }) {
                 >
                   <i className={menu.icon}></i>
                   {!collapsed && <Link to={menu.path}>{menu.name}</Link>}
+                  {!collapsed && (
+                    menu.name === "Health Tips" ? (
+                      <a href={menu.path} target="_blank" rel="noopener noreferrer">
+                        {menu.name}
+                      </a>
+                    ) : (
+                      <Link to={menu.path}>{menu.name}</Link>
+                    )
+                  )}
                 </div>
               );
             })}

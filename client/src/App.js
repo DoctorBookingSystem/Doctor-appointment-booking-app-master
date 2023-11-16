@@ -1,4 +1,3 @@
-import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import EnterCode from "./pages/EnterCode";
@@ -6,6 +5,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Register from "./pages/Register";
 import TermsAndConditions from "./pages/TermsAndConditions";
+import React, { useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 import Home from "./pages/Home";
 import { useSelector } from "react-redux";
@@ -28,14 +28,20 @@ import BookAppointment from "./pages/BookAppointment";
 import Appointments from "./pages/Appointments";
 import DoctorAppointments from "./pages/Doctor/DoctorAppointments";
 import DoctorTerms from "./pages/DoctorTerms";
+import Profile from "./pages/Doctor/Profile";
+import RiskAssessment from "./pages/Admin/RiskAssessment";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import RecoverAccount from "./pages/RecoverAccount";
 
 function App() {
-  const { loading } = useSelector((state) => state.alerts);
+  const { loading } = useSelector((state) => state.alerts); 
+
   return (
-    <BrowserRouter>
+    <>
       {loading && (
         <div className="spinner-parent">
-          <div className="spinner-border" role="status"></div>
+          <div class="spinner-border" role="status"></div>
         </div>
       )}
       <Toaster position="top-center" reverseOrder={false} />
@@ -239,8 +245,41 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/forgot-password"
+          element={
+            <PublicRoute>
+              <ForgotPassword />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            <PublicRoute>
+              <ResetPassword />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/recover-account"
+          element={
+            <PublicRoute>
+              <RecoverAccount />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/Admin/RiskAssessment"
+          element={
+            <ProtectedRoute>
+              <RiskAssessment />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
-    </BrowserRouter>
+    </>
   );
 }
 

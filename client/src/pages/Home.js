@@ -5,9 +5,13 @@ import { Col, Row } from "antd";
 import Doctor from "../components/Doctor";
 import { useDispatch, useSelector } from "react-redux";
 import { showLoading, hideLoading } from "../redux/alertsSlice";
+import SearchBar from './SearchBar'; 
+
 function Home() {
   const [doctors, setDoctors] = useState([]);
   const dispatch = useDispatch();
+  const [selectedSpecialization, setSelectedSpecialization] = useState("All Specializations");
+
   const getData = async () => {
     try {
       dispatch(showLoading())
@@ -28,17 +32,29 @@ function Home() {
   useEffect(() => {
     getData();
   }, []);
+
+  const handleSearch = (selectedSpecialization) => {
+    setSelectedSpecialization(selectedSpecialization);
+  };
+
   return (
     <Layout>
+      <SearchBar onSearch={handleSearch} />
       <Row gutter={20}>
-        {doctors.map((doctor) => (
-          <Col span={8} xs={24} sm={24} lg={8}>
-            <Doctor doctor={doctor} />
-          </Col>
-        ))}
+        {doctors.filter((doctor) => {
+            if (selectedSpecialization === "All Specializations" || selectedSpecialization === "") {
+              return true; 
+            } else {
+              return doctor.specialization === selectedSpecialization;
+            }
+          })
+          .map((doctor) => (
+            <Col span={8} xs={24} sm={24} lg={8}>
+              <Doctor doctor={doctor} />
+            </Col>
+          ))}
       </Row>
     </Layout>
   );
 }
-
 export default Home;

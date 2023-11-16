@@ -32,26 +32,34 @@ function Userslist() {
     getUsersData();
   }, []);
 
-  const handleDeleteUser = async (userId) => {
+  // const handleDeleteUser = async (userId) => {
+  //   try {
+  //     dispatch(showLoading());
+  //     const response = await axios.delete(`/api/admin/delete-user/${userId}`, {
+    
+  const changeUserAccess = async (record, access) => {
     try {
       dispatch(showLoading());
-      const response = await axios.delete(`/api/admin/delete-user/${userId}`, {
+      console.log(record._id);
+      const response = await axios.post("/api/admin/revokeAccess", { userId: record._id, access : access.access }, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
-      dispatch(hideLoading());
+      //dispatch(hideLoading());
       if (response.data.success) {
-        // Update the users list after successful deletion
-        const updatedUsers = users.filter((user) => user._id !== userId);
-        setUsers(updatedUsers);
-        toast.success(response.data.message);
+        //toast.success(response.data.message);
+        window.location.reload();
       }
     } catch (error) {
-      toast.error("Error deleting user");
       dispatch(hideLoading());
+      toast.error(error);
     }
   };
+
+  useEffect(() => {
+    getUsersData();
+  }, []);
 
   const columns = [
     {
@@ -82,6 +90,55 @@ function Userslist() {
             </Popconfirm>
           </div>
         ),
+    },
+    // {
+    //   title: "Actions",
+    //   dataIndex: "actions",
+    //   render: (text, record) => (
+    //     <div className="d-flex">
+    //       <h1 className="anchor">Block</h1>
+    //     </div>
+    //   ),
+    // },
+    // {
+    //   title: "Actions",
+    //   dataIndex: "actions",
+    //   render: (text, record) => (
+    //     <div className="d-flex">
+    //       {record.status === "pending" && (
+    //         <h1
+    //           className="anchor"
+    //           onClick={() => changeUserAccess(record, "approved")}
+    //         >
+    //           Approve
+    //         </h1>
+    //       )}
+    //       {record.status === "approved" && (
+    //         <h1
+    //           className="anchor"
+    //           onClick={() => changeUserAccess(record, "blocked")}
+    //         >
+    //           Block
+    //         </h1>
+    //       )}
+    //     </div>
+    //   ),
+    // },
+    {
+      title: "Access",
+      dataIndex: "access",
+      render: (text, record) => (
+        <div className="d-flex">
+          {record && (
+            <h1
+              className="anchor"
+              onClick={() => changeUserAccess(record, record)}
+            >
+            {record.access ? "Block" : "Unblock"} 
+            </h1>
+          )}
+        </div>
+      ),
     },
   ];
 

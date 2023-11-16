@@ -19,7 +19,11 @@ if (process.env.NODE_ENV === "production") {
     res.sendFile(path.resolve(__dirname, "client/build/index.html"));
   });
 }
+<<<<<<< HEAD
 const port = process.env.PORT || 5000;
+=======
+const port = process.env.PORT || 6000;
+>>>>>>> jk_code
 
 app.get("/", (req, res) => res.send("Hello World!"));
 // app.listen(port, () => console.log(`Node Express Server Started at ${port}!`));

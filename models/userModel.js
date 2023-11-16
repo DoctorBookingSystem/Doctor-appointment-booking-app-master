@@ -26,6 +26,18 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    patientInfo: {
+      type: Array,
+      default: [],
+    },
+    consent: {
+      type: Boolean,
+      default: false,
+    },
+    request: {
+      type: Boolean,
+      default: false,
+    },
     seenNotifications: {
       type: Array,
       default: [],
@@ -38,6 +50,14 @@ const userSchema = new mongoose.Schema(
       type: Array,
       default: [],
     },
+    twoFactorSecret: {
+      type: String,
+      default: null,
+    },
+    access: {
+      type: Boolean,
+      default: true,
+    },
     resetCode: {
       type: String,
       default: null,
@@ -49,6 +69,10 @@ const userSchema = new mongoose.Schema(
     authCode: {
       type: String,
       default:null,
+    },
+    passwords: {
+      type: Array,
+      default: [],
     },
     loginAttempts: {
       type: Number,

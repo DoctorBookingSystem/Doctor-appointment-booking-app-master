@@ -56,6 +56,6 @@ function UserForm({ onFinish, initivalValues }) {
       </Form>
     );
   }
-  
-  export default UserForm;
-  
+
+export default UserForm;
+

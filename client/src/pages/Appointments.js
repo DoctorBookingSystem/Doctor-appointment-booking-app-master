@@ -6,9 +6,11 @@ import { toast } from "react-hot-toast";
 import axios from "axios";
 import { Table } from "antd";
 import moment from "moment";
+import { useNavigate, useParams } from "react-router-dom";
 
 function Appointments() {
   const [appointments, setAppointments] = useState([]);
+  const params = useParams();
   const dispatch = useDispatch();
   const getAppointmentsData = async () => {
     try {
@@ -26,6 +28,49 @@ function Appointments() {
       dispatch(hideLoading());
     }
   };
+
+  const handleCancelAppointment = async (userId, doctorId) => {
+    try {
+      const response2 = await axios.post(
+        "/api/user/notify-doctor",
+        {
+          doctorId: doctorId,
+          userId: userId
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      if (response2.data.success) {
+        //toast.success(response2.data.message);
+      }
+    }catch (error) {
+      console.log(error);
+    }
+
+    try {
+      dispatch(showLoading());
+      const response = await axios.delete(
+        `/api/user/cancel-appointment/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      //dispatch(hideLoading());
+      if (response.data.success) {
+        toast.success(response.data.message);
+        window.location.reload();
+      }
+    } catch (error) {
+      console.log(error);
+      dispatch(hideLoading());
+    }
+  };
+
   const columns = [
     {
         title: "Id",
@@ -54,13 +99,24 @@ function Appointments() {
       dataIndex: "createdAt",
       render: (text, record) => (
         <span>
-          {moment(record.date).format("DD-MM-YYYY")} {moment(record.time).format("h:mm a")}
+          {moment(record.date).format("MM-DD-YYYY")} {record.time ? record.time : 'N/A'}
         </span>
       ),
     },
     {
         title: "Status",
         dataIndex: "status",
+    },
+    {
+      title: "Actions",
+      dataIndex: "_id",
+      render: (text, record) => (
+        record.status !== 'rejected' ? (
+          <span className="clickable-text" onClick={() => handleCancelAppointment(record._id, record.doctorInfo.userId)}>
+            Cancel
+          </span>
+        ) : null
+      ),
     }
   ];
   useEffect(() => {

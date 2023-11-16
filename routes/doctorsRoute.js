@@ -85,7 +85,9 @@ router.post("/change-appointment-status", authMiddleware, async (req, res) => {
     const appointment = await Appointment.findByIdAndUpdate(appointmentId, {
       status,
     });
-
+    if (status === 'rejected'){
+      await Appointment.findByIdAndRemove(appointmentId);
+    }
     const user = await User.findOne({ _id: appointment.userId });
     const unseenNotifications = user.unseenNotifications;
     unseenNotifications.push({
@@ -174,32 +176,26 @@ router.post("/update-patient-info", authMiddleware, async (req, res) => {
   try {
 
     const userId = "64f529537365e9337d74db88";
-    // Assuming the patient information is stored in the doctorModel
     const doctor = await Doctor.findOne({ userId: userId });
 
-    // Update the patient-related fields
     doctor.patientName = req.body.patientName;
     doctor.patientNumber = req.body.patientNumber;
     doctor.patientEmail = req.body.patientEmail;
     doctor.patientDOB = req.body.patientDOB;
     doctor.patientGender = req.body.patientGender;
-    // Update more patient fields as needed
 
     doctor.reasonForVisit = req.body.reasonForVisit;
     doctor.dateofVisit = req.body.dateofVisit;
     doctor.medicalCondition = req.body.medicalCondition;
     doctor.allergies = req.body.allergies;
     doctor.medications = req.body.medications;
-    // Update more medical fields as needed
 
     doctor.doctorName = req.body.doctorName;
     doctor.doctorNumber = req.body.doctorNumber;
     doctor.doctorWebsite = req.body.doctorWebsite;
     doctor.electronicSignature = req.body.electronicSignature;
     doctor.dateSigned = req.body.dateSigned;
-    // Update more doctor fields as needed
 
-    // Save the updated doctor model
     await doctor.save();
 
     res.status(200).send({
@@ -213,6 +209,18 @@ router.post("/update-patient-info", authMiddleware, async (req, res) => {
       success: false,
       error,
     });
+  }
+
+});
+
+router.get('/doctors_specialization', async (req, res) => {
+  try {
+    const doctors = await Doctor.find({}, 'specialization'); 
+    const specializations = doctors.map((doctor) => doctor.specialization);
+    res.status(200).json({ success: true, data: specializations });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Error retrieving Doctors data' });
   }
 });
 

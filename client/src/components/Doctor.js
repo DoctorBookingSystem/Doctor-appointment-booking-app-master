@@ -28,6 +28,10 @@ function Doctor({ doctor }) {
         <b>Timings : </b>
         {doctor.timings[0]} - {doctor.timings[1]}
       </p>
+      <p>
+        <b>Specialization : </b>
+        {doctor.specialization}
+      </p>
     </div>
   );
 }

@@ -11,8 +11,8 @@ function DoctorForm({ onFinish, initivalValues }) {
         ...initivalValues,
         ...(initivalValues && {
           timings: [
-            moment(initivalValues?.timings[0], "HH:mm"),
-            moment(initivalValues?.timings[1], "HH:mm"),
+            moment(initivalValues?.timings[0], "h:mm a"),
+            moment(initivalValues?.timings[1], "h:mm a"),
           ],
         }),
       }}
@@ -110,7 +110,7 @@ function DoctorForm({ onFinish, initivalValues }) {
             name="timings"
             rules={[{ required: true }]}
           >
-            <TimePicker.RangePicker format="HH:mm" />
+            <TimePicker.RangePicker format="h:mm a" />
           </Form.Item>
         </Col>
       </Row>

@@ -1,41 +1,77 @@
-import { Row, Col, Button, Form, Input } from "antd";
+import { Button, Form, Input } from "antd";
+import React, { useState, useEffect } from 'react';
 import toast from "react-hot-toast";
-import React from "react";
-import { useDispatch } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
-import { hideLoading, showLoading } from "../redux/alertsSlice";
 import axios from "axios";
-import { useState } from "react";
-
+import { hideLoading, showLoading } from "../redux/alertsSlice";
 
 function Login() {
-  const dispatch = useDispatch();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [twoFactorCode, setTwoFactorCode] = useState("");
+  const [step, setStep] = useState(1);
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const [isAccountLocked, setIsAccountLocked] = useState(false);
-  const onFinish = async (values) => {
+
+  const handleLogin = async () => {
     try {
-      dispatch(showLoading());
-      const response = await axios.post("/api/user/login", values);
-      dispatch(hideLoading());
-      if (response.data.success) {
-        toast.success(response.data.message, {
-          duration: 5000, 
-        });
-        //toast.success(response.data.message);
-        localStorage.setItem("token", response.data.data);
-        navigate("/");
-      } else {
-        if (response.data.message.includes("locked")) {
-          setIsAccountLocked(true);
+      if (step === 1) {
+        // Step 1: User enters email and password
+        setLoading(true);
+
+        const response = await axios.post("/api/user/login", {email, password});
+        if (response.data.success) {
+          setLoading(false);
+          // Email sent successfully, move to step 2
+          setTwoFactorCode(response.data.twoFactorCode);
+          setStep(2);
+          toast.success(response.data.message);
+        } else {
+          setLoading(false);
+          // Handle email sending error
+          if (response.data.message.includes("locked")) {
+            setIsAccountLocked(true);
+          }
+          toast.error(response.data.message);
         }
-        toast.error(response.data.message);
+      }
+      if (step === 2) {
+        // Step 2: User enters 2FA code
+        setLoading(true);
+        try {
+          const response = await axios.post("/api/user/verify-2fa", {
+            email, twoFactorCode,
+          });
+          if (response.data.success) {
+            setLoading(false);
+            
+            // Grant access
+            toast.success(response.data.message);
+            // Handle token storage securely
+            localStorage.setItem("token", response.data.data);
+            navigate("/");
+          } else {
+            setLoading(false);
+            // Invalid 2FA code or other errors
+            toast.error(response.data.message);
+          }
+        } catch (error) {
+          setLoading(false);
+          // Handle API request error
+          console.error(error);
+          toast.error("An error occurred while verifying 2FA code.");
+        }
       }
     } catch (error) {
-      dispatch(hideLoading());
-      toast.error("Something went wrong");
+      setLoading(false);
+      // Handle API request error
+      console.error(error);
+      toast.error("An error occurred while logging in.");
     }
   };
-
+  
   return (
     <div className="authentication">
       <div className="authentication-form card p-4">
@@ -43,101 +79,50 @@ function Login() {
         {isAccountLocked && (
           <p style={{ color: "red" }}>Account locked due to too many unsuccessful login attempts. Please try again later.</p>
         )}
-        <Form layout="vertical" onFinish={onFinish}>
-          <Form.Item label="Email" name="email">
-            <Input placeholder="Email" />
-          </Form.Item>
-          <Form.Item label="Password" name="password">
-            <Input placeholder="Password" type="password" />
-          </Form.Item>
-          <Row justify="space-between">
-            <Col>
-              <Button className="primary-button my-2 full-width-button" htmlType="submit">
-                LOGIN
-              </Button>
-            </Col>
-            <Col>
-              <Link to="/forgot-password" className="anchor">
-                Forgot Password?
-              </Link>
-            </Col>
-          </Row>
-          <Link to="/register" className="anchor mt-2">
-            CLICK HERE TO REGISTER
-          </Link>
-        </Form>
+        <form layout="vertical" onSubmit={(e) => e.preventDefault()}>
+          <input
+            type="text"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={{ width: '100%' }}
+          />
+          <br />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={{ width: '100%' }}
+          />
+          <br />
+          {step === 2 && (
+            <input
+              type="text"
+              placeholder="Enter temporary password"
+              value={twoFactorCode}
+              onChange={(e) => setTwoFactorCode(e.target.value)}
+              style={{ width: '100%' }}
+            />
+          )}
+         <button
+            className="primary-button my-2 full-width-button"
+            onClick={(e) => {
+              e.preventDefault(); 
+              handleLogin(); 
+            }}
+          >
+          {step === 1 ? 'Login' : 'Verify 2FA'}
+        </button>
+        <Link to="/register" className="anchor mt-2" style={{ display: 'block' }}>
+          Register
+        </Link>
+        <Link to="/forgot-password" className="anchor" style={{ display: 'block' }}>
+          Forgot Password
+        </Link>
+        </form>
       </div>
     </div>
   );
 }
-
 export default Login;
-
-// function Login() {
-//   const dispatch = useDispatch();
-//   const navigate = useNavigate();
-
-//   const onFinish = async (values) => {
-//     try {
-//       dispatch(showLoading());
-//       const response = await axios.post("/api/user/login", values);
-//       dispatch(hideLoading());
-
-//       if (response.data.success) {
-//         // Display a success message to the user
-//         toast.success("Authentication Code sent.");
-
-//         // Redirect to EnterCode page
-//         navigate("/enter-code");
-        
-//       } else {
-//         // Handle login failure (display an error message)
-//         toast.error(response.data.message);
-//       }
-//     } catch (error) {
-//       // Handle login error (display a generic error message)
-//       dispatch(hideLoading());
-//       toast.error("Something went wrong");
-//     }
-//   };
-
-//   return (
-//     <div className="authentication">
-//       <div className="authentication-form card p-4">
-//         <h1 className="card-title">FIU Doctor Booking System</h1>
-//         <Form layout="vertical" onFinish={onFinish}>
-//           <Form.Item label="Email" name="email">
-//             <Input placeholder="Email" />
-//           </Form.Item>
-//           <Form.Item label="Password" name="password">
-//             <Input placeholder="Password" type="password" />
-//           </Form.Item>
-//           <Row justify="space-between">
-//             <Col>
-//               <Button
-//                 className="primary-button my-2 full-width-button"
-//                 htmlType="submit"
-//               >
-//                 LOGIN
-//               </Button>
-//             </Col>
-//             <Col>
-//               <Link to="/forgot-password" className="anchor">
-//                 Forgot Password?
-//               </Link>
-//             </Col>
-//           </Row>
-//           <Link to="/register" className="anchor mt-2">
-//             CLICK HERE TO REGISTER
-//           </Link>
-//         </Form>
-//       </div>
-//     </div>
-//   );
-// }
-
-// export default Login;
-
-
-  
-

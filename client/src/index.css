@@ -18,6 +18,22 @@ input:focus,
   border: 1px solid gray !important;
 }
 
+.clickable-text {
+  color: blue; 
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  margin: 5px;
+}
+
+.checkbox-text {
+  margin-left: 8px; 
+}
+
 label {
   font-size: 16px !important;
   color: black !important;
@@ -216,4 +232,98 @@ p {
   line-height: 1.6;
   color: black;
   margin-top: 20px;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.search-bar input[type="text"] {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.search-bar select {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.search-bar button {
+  background-color: #081E3F;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.search-bar button:hover {
+  background-color: #007bff;
+}
+
+/* RiskAssessmentTable.css */
+
+.form {
+  margin-bottom: 20px;
+}
+
+.table-title {
+  font-size: 24px;
+  margin-bottom: 10px;
+  padding-top:30px;
+}
+
+.risk-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.risk-table th, .risk-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.risk-table th {
+  background-color: #f2f2f2;
+}
+
+.risk-form {
+  display: flex;
+  flex-direction: row; 
+  flex-wrap: wrap; 
+  justify-content: space-between; 
+  max-width: 800px; 
+}
+
+.risk-form label {
+  margin-bottom: 10px;
+}
+
+.risk-form input,
+.risk-form select {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+}
+
+.risk-form button {
+  padding: 10px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.risk-form button:hover {
+  background-color: #45a049;
 }

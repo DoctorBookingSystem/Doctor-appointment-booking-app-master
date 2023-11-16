@@ -18,6 +18,7 @@ function BookAppointment() {
   const [doctor, setDoctor] = useState(null);
   const params = useParams();
   const dispatch = useDispatch();
+  const [isChecked, setIsChecked] = useState(false);
 
   const getDoctorData = async () => {
     try {
@@ -43,7 +44,67 @@ function BookAppointment() {
       dispatch(hideLoading());
     }
   };
+
+  const openPopup = () => {
+    // Create the content for the popup
+    const popupContent = `
+      <html>
+      <head>
+        <title>Healthcare Information Consent Agreement</title>
+      </head>
+      <body>
+        <h1>Healthcare Information Consent Agreement</h1>
+        <style>
+
+        .content-container {
+          width: 50%; /* Set the width to half of the body's width */
+          margin: 0 auto; /* Center the div horizontally */
+          text-align: left; /* Reset text alignment to left */
+          padding: 20px; /* Add padding inside the container */
+        }
+      
+        body {
+          max-width:100%;
+          word-wrap: break-word; /* Enable word wrap */
+        }
+        h1 {
+          text-align: center;
+        }
+
+      </style>
+ 
+      <div class="content-container">
+      <p>I, the patient, hereby provide my informed and voluntary consent for the collection, storage, and use of my healthcare information by FIU Doctor Booking for the purpose of improving my healthcare services.</p>
+      <p><b>Purpose of Data Collection and Usage:</b></p>
+      <p>I understand that the System will collect and use my healthcare information for the following purposes:</p>
+      <ul>
+        <li>Treatment: To provide me with personalized healthcare services, including diagnosis, treatment, and follow-up care.</li><br>
+        <li>Medical Records: To maintain accurate and up-to-date medical records related to my health condition and treatment.</li><br>
+        <li>Quality Improvement: To analyze and improve the quality of healthcare services provided by the System.</li><br>
+        <li>Communication: To facilitate communication between healthcare providers involved in my care.</li>
+      </ul>
+      <p><b>Questions and Contact Information:</b></p>
+      <p>If I have any questions or concerns about the use of my healthcare information or wish to withdraw my consent, I can contact:</p>
+      <p>fiudoctorbooking@gmail.com</p>
+      <p>I have read and understood the contents of this Healthcare Information Consent Agreement and voluntarily consent to the collection, storage, and use of my healthcare information by FIU Doctor Booking.</p>
+    </div>
+      </body>
+      </html>
+    `;
+
+    // Create a new window with the content
+    const newWindow = window.open('', '_blank');
+    newWindow.document.open();
+    newWindow.document.write(popupContent);
+    newWindow.document.close();
+  };
+
+  const handleCheckboxChange = () => {
+    setIsChecked(!isChecked); 
+  };
+
   const checkAvailability = async () => {
+    
     try {
       dispatch(showLoading());
       const response = await axios.post(
@@ -148,35 +209,61 @@ function BookAppointment() {
                 {doctor.website}
               </p>
               <div className="d-flex flex-column pt-2 mt-2">
+              {!isAvailable && (
+                <>
                 <DatePicker
-                  format="DD-MM-YYYY"
+                  format="MM-DD-YYYY"
                   onChange={(value) => {
-                    setDate(moment(value).format("DD-MM-YYYY"));
+                    setDate(moment(new Date(value)).format("MM-DD-YYYY"));
                     setIsAvailable(false);
                   }}
                 />
                 <TimePicker
                   format="h:mm a"
                   className="mt-3"
+                  minuteStep={15} 
                   onChange={(value) => {
                     setIsAvailable(false);
-                    setTime(moment(value).format("h:mm a"));
+                    setTime(moment(value, "h:mm A").format("h:mm A"));
                   }}
-                />
-              {!isAvailable &&   <Button
+                />  
+                <Button
                   className="primary-button mt-3 full-width-button"
                   onClick={checkAvailability}
                 >
                   Check Availability
-                </Button>}
+                </Button>
+                </>
+                )}
 
                 {isAvailable && (
+                    <>
+                    <p>
+                      Your appointment is on {date} at {time}
+                      <br></br><br></br>
+                      <b>
+                        <a href="#" onClick={openPopup}>Please read the health information consent agreement.</a>
+                      </b>
+                    </p>
+                    <div>
+                      <label className="checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={handleCheckboxChange}
+                        />
+                        <span className="checkbox-text">I agree to share my health information</span>
+                      </label>
+                    </div>
                   <Button
                     className="primary-button mt-3 full-width-button"
                     onClick={bookNow}
+                    disabled={!isChecked}
+
                   >
                     Book Now
                   </Button>
+                  </>
                 )}
               </div>
             </Col>

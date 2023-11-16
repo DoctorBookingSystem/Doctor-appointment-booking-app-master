@@ -6,7 +6,7 @@ export const userSlice = createSlice({
     user: null
   },
   reducers: {
-    setUser: (state , action) => {
+    setUser: (state, action) => {
       state.user = action.payload;
     },
     clearUser: (state) => {
@@ -21,3 +21,5 @@ export const userSlice = createSlice({
 });
 
 export const { setUser, clearUser, setIsDoctor } = userSlice.actions;
+
+export default userSlice.reducer;
