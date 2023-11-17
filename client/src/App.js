@@ -20,7 +20,6 @@ import UserProfile from "./pages/UserProfile";
 import Profile from "./pages/Doctor/Profile";
 import PatientSummary from "./pages/PatientSummary";
 import Certification from "./pages/Doctor/Certification";
-import AppointmentFeedback from "./pages/AppointmentFeedback";
 import SecureHealthInfo from "./pages/SecureHealthInfo";
 import HealthInformation from "./pages/HealthInformation";
 import Records from "./pages/Records";
@@ -112,14 +111,6 @@ function App() {
           element={
             <ProtectedRoute>
               <ApplyDoctor />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/feedback"
-          element={
-            <ProtectedRoute>
-              <AppointmentFeedback />
             </ProtectedRoute>
           }
         />
