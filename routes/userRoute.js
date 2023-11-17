@@ -796,44 +796,22 @@ router.post("/book-appointment", authMiddleware, async (req, res) => {
         await adminUser.save();
       }
     }
+   
+    const emailSent = await sendAppointmentConfirmationEmail(req.body.userInfo.email, user, req.body);
 
-    // Send appointment confirmation email
-    const transporter = nodemailer.createTransport({
-      service: 'gmail', // e.g., 'Gmail'
-      auth: {
-        user: 'FIUDoctorBooking@gmail.com',
-        pass: 'dastwmvuhcvcddwj',
-      },
-    });
+    if (emailSent) {
+      // The email has been sent successfully, now send feedback email
+      const feedbackEmailSent = await sendFeedbackEmail(req.body.userInfo.email, req.body);
 
-    const mailOptions = {
-      from: 'FIUDoctorBooking@gmail.com',
-      to: req.body.userInfo.email, // User's email
-      subject: 'Appointment Confirmation - FIU Doctor Booking',
-      html: `
-        <p>Dear ${req.body.userInfo.name},</p>
-        <p>Your appointment with Dr. ${user.name} has been confirmed.</p>
-        <p>Date: ${req.body.date}</p>
-        <p>Time: ${req.body.time}</p>
-        <p>Location: FIU Health Center</p>
-        <p>Doctor's Contact Information:</p>
-        <p>Phone Number: ${user.phoneNumber}</p>
-        <p>Email: ${user.email}</p>
-        <p>Thank you for choosing our service!</p>
-        <p>Regards,</p>
-        <p>FIU Health Services</p>
-        <p><img src="https://collegiaterecovery.org/wp-content/uploads/2022/02/FIU.png" alt="FIU Health Services" width="300" height="100"></p>
-        
-      `,
-    };
-
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.log(error);
+      if (feedbackEmailSent) {
+        console.log("Feedback email sent successfully");
       } else {
-        console.log('Email sent: ' + info.response);
+        console.log("Error sending feedback email");
       }
-    });
+    } else {
+      console.log("Error sending appointment confirmation email");
+    }
+
 
     res.status(200).send({
       message: "Appointment booked successfully - Email Confirmation Sent",
@@ -866,6 +844,146 @@ router.post("/book-appointment", authMiddleware, async (req, res) => {
     });
   }
 });
+
+// Function to send appointment confirmation email
+async function sendAppointmentConfirmationEmail(userEmail, doctor, appointmentDetails) {
+  return new Promise((resolve) => {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: 'FIUDoctorBooking@gmail.com',
+        pass: 'dastwmvuhcvcddwj',
+      },
+    });
+
+    const mailOptions = {
+      from: 'FIUDoctorBooking@gmail.com',
+      to: userEmail,
+      subject: 'Appointment Confirmation - FIU Doctor Booking',
+      html: `
+        <p>Dear ${appointmentDetails.userInfo.name},</p>
+        <p>Your appointment with Dr. ${doctor.name} has been confirmed.</p>
+        <p>Date: ${appointmentDetails.date}</p>
+        <p>Time: ${appointmentDetails.time}</p>
+        <p>Location: FIU Health Center</p>
+        <p>Doctor's Contact Information:</p>
+        <p>Phone Number: ${doctor.phoneNumber}</p>
+        <p>Email: ${doctor.email}</p>
+        <p>Thank you for choosing our service!</p>
+        <p>Regards,</p>
+        <p>FIU Health Services</p>
+        <p><img src="https://collegiaterecovery.org/wp-content/uploads/2022/02/FIU.png" alt="FIU Health Services" width="300" height="100"></p>
+      `,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.log(error);
+        resolve(false);
+      } else {
+        console.log('Email sent: ' + info.response);
+        resolve(true);
+      }
+    });
+  });
+}
+
+// Function to send feedback email
+async function sendFeedbackEmail(userEmail, appointmentDetails) {
+  return new Promise((resolve) => {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: 'FIUDoctorBooking@gmail.com',
+        pass: 'dastwmvuhcvcddwj',
+      },
+    });
+
+    const googleFormLink = 'https://forms.gle/tAU1VwqCX2UA5bgE6'; // Replace with your actual Google Form link
+
+    const mailOptions = {
+      from: 'FIUDoctorBooking@gmail.com',
+      to: userEmail,
+      subject: 'FIU Secure HealthPath Appointment Feedback',
+      html: `
+        <p>Dear ${appointmentDetails.userInfo.name},</p>
+        <p>Please tell us about your experience with the FIU Doctor Booking App and the appointment with the doctor by completing a 1-minute survey.</p>
+        <p>Your information will be kept anonymous.</p>
+        <p>Please fill out this <a href="${googleFormLink}" target="_blank">Google Form</a>.</p>
+        <p>Thank you for your feedback!</p>
+        <p>Regards,</p>
+        <p>FIU Health Services</p>
+        <p><img src="https://collegiaterecovery.org/wp-content/uploads/2022/02/FIU.png" alt="FIU Health Services" width="300" height="100"></p>
+      `,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.log(error);
+        resolve(false);
+      } else {
+        console.log('Feedback Email sent: ' + info.response);
+        resolve(true);
+      }
+    });
+  });
+}
+
+
+
+
+
+//     // Send appointment confirmation email
+//     const transporter = nodemailer.createTransport({
+//       service: 'gmail', // e.g., 'Gmail'
+//       auth: {
+//         user: 'FIUDoctorBooking@gmail.com',
+//         pass: 'dastwmvuhcvcddwj',
+//       },
+//     });
+
+//     const mailOptions = {
+//       from: 'FIUDoctorBooking@gmail.com',
+//       to: req.body.userInfo.email, // User's email
+//       subject: 'Appointment Confirmation - FIU Doctor Booking',
+//       html: `
+//         <p>Dear ${req.body.userInfo.name},</p>
+//         <p>Your appointment with Dr. ${user.name} has been confirmed.</p>
+//         <p>Date: ${req.body.date}</p>
+//         <p>Time: ${req.body.time}</p>
+//         <p>Location: FIU Health Center</p>
+//         <p>Doctor's Contact Information:</p>
+//         <p>Phone Number: ${user.phoneNumber}</p>
+//         <p>Email: ${user.email}</p>
+//         <p>Thank you for choosing our service!</p>
+//         <p>Regards,</p>
+//         <p>FIU Health Services</p>
+//         <p><img src="https://collegiaterecovery.org/wp-content/uploads/2022/02/FIU.png" alt="FIU Health Services" width="300" height="100"></p>
+        
+//       `,
+//     };
+
+//     transporter.sendMail(mailOptions, (error, info) => {
+//       if (error) {
+//         console.log(error);
+//       } else {
+//         console.log('Email sent: ' + info.response);
+//       }
+//     });
+
+//     res.status(200).send({
+//       message: "Appointment booked successfully - Email Confirmation Sent",
+//       success: true,
+//     });
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).send({
+//       message: "Error booking appointment",
+//       success: false,
+//       error,
+//     });
+//   }
+// });
 
 router.post("/check-booking-avilability", authMiddleware, async (req, res) => {
   try {
