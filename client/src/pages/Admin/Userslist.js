@@ -32,10 +32,26 @@ function Userslist() {
     getUsersData();
   }, []);
 
-  // const handleDeleteUser = async (userId) => {
-  //   try {
-  //     dispatch(showLoading());
-  //     const response = await axios.delete(`/api/admin/delete-user/${userId}`, {
+  const handleDeleteUser = async (userId) => {
+    try {
+      dispatch(showLoading());
+      const response = await axios.delete(`/api/admin/delete-user/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      dispatch(hideLoading());
+      if (response.data.success) {
+        // Update the users list after successful deletion
+        const updatedUsers = users.filter((user) => user._id !== userId);
+        setUsers(updatedUsers);
+        toast.success(response.data.message);
+      }
+    } catch (error) {
+      toast.error("Error deleting user");
+      dispatch(hideLoading());
+    }
+  };
     
   const changeUserAccess = async (record, access) => {
     try {

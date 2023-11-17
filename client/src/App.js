@@ -28,10 +28,7 @@ import BookAppointment from "./pages/BookAppointment";
 import Appointments from "./pages/Appointments";
 import DoctorAppointments from "./pages/Doctor/DoctorAppointments";
 import DoctorTerms from "./pages/DoctorTerms";
-import Profile from "./pages/Doctor/Profile";
 import RiskAssessment from "./pages/Admin/RiskAssessment";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
 import RecoverAccount from "./pages/RecoverAccount";
 
 function App() {
