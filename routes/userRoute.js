@@ -7,7 +7,6 @@ const jwt = require("jsonwebtoken");
 const authMiddleware = require("../middlewares/authMiddleware");
 const Appointment = require("../models/appointmentModel");
 const moment = require("moment");
-const nodemailer = require('nodemailer');
 const crypto = require("crypto");
 const multer = require("multer");
 const path = require("path");
@@ -16,12 +15,10 @@ const LOCK_TIME = 2 * 60 * 1000;
 
 const AuditLogin = require("../models/auditLoginModel");
 const AuditChanges = require("../models/auditChangesModel");
-const bcrypt = require("bcryptjs");
 require("dotenv").config();
 const speakeasy = require("speakeasy");
 const { updateTwoFactorSecret, encryptData, decryptData } = require('./services');
 const nodemailer = require("nodemailer");
-const crypto = require('crypto');
 //const encryptionKey = crypto.randomBytes(32).toString('hex'); created encrypted key
 //const iv1 = crypto.randomBytes(16); 
 
