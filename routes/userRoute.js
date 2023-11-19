@@ -7,7 +7,7 @@ const jwt = require("jsonwebtoken");
 const authMiddleware = require("../middlewares/authMiddleware");
 const Appointment = require("../models/appointmentModel");
 const moment = require("moment");
-const crypto = require("crypto");
+const nodemailer = require('nodemailer');
 const multer = require("multer");
 const path = require("path");
 const ClamScan = require('clamscan');
@@ -18,7 +18,7 @@ const AuditChanges = require("../models/auditChangesModel");
 require("dotenv").config();
 const speakeasy = require("speakeasy");
 const { updateTwoFactorSecret, encryptData, decryptData } = require('./services');
-const nodemailer = require("nodemailer");
+const crypto = require('crypto');
 //const encryptionKey = crypto.randomBytes(32).toString('hex'); created encrypted key
 //const iv1 = crypto.randomBytes(16); 
 
@@ -82,9 +82,50 @@ router.post("/login" , async (req, res) => {
     }
 
     if (user.loginAttempts >= 3 && user.lockUntil > Date.now()) {
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: 'FIUDoctorBooking@gmail.com',
+          pass: 'dastwmvuhcvcddwj',
+        },
+      });
+
+      const mailOptions = {
+        from: 'FIUDoctorBooking@fiu.edu',
+        to: decryptedEmail, 
+        subject: 'Account Security Alert - Potential Breach Detected',
+        html: ` <p>
+        Dear ${decryptData(user.name)},
+        <br><br>
+        We are writing to inform you about an important security event related to your account. Our security systems have detected multiple failed login attempts 
+        on your account. While your account remains secure, these unauthorized attempts raise concerns about the safety of your credentials. If you ever suspect any unusual activity or have questions about your account's security, 
+        please reach out to us at fiuBookingSupport@gmail.com.
+        <br><br>
+        Sincerely,<br><br>
+        The FIU Doctor Booking Security Team
+        </p>`,
+      }
+
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.error('Error sending email:', error);
+          // Handle email sending error
+          return res.status(500).json({ success: false, message: "Error sending email" });
+        } else {
+          console.log('Email sent:', info.response);
+          // Email sent successfully, respond to the client
+          return res.status(200).json({ success: true, message: " Security email sent" });
+        }
+      });
       return res
         .status(200)
         .send({ message: "Account locked. Try again later.", success: false });
+    }
+
+    if (userAccess === false){
+      return res
+      .status(200)
+      .send({ message: "Your account has been deactivated.", success: false });
     }
 
     const isMatch = await bcrypt.compare(req.body.password, user.password);
@@ -98,11 +139,47 @@ router.post("/login" , async (req, res) => {
       return res
         .status(200)
         .send({ message: "Password is incorrect", success: false });
-    } 
+    } else {
+      user.loginAttempts = 0;
+      await user.save();
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+        expiresIn: "1d",
+      });
+    }
 
     // Reset login attempts on successful login
     user.loginAttempts = 0;
     await user.save();
+
+    twoFactorCode = await updateTwoFactorSecret(encryptedEnteredEmail, secret);
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: 'FIUDoctorBooking@gmail.com',
+        pass: 'dastwmvuhcvcddwj',
+      },
+    });
+
+    const mailOptions = {
+      from: 'FIUDoctorBooking@fiu.edu',
+      to: decryptedEmail, 
+      subject: 'Your 2FA Code',
+      text: `Your 2FA code is: ${secret}.`,
+    }
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error('Error sending email:', error);
+        // Handle email sending error
+        return res.status(500).json({ success: false, message: "Error sending email" });
+      } else {
+        console.log('Email sent:', info.response);
+        // Email sent successfully, respond to the client
+        return res.status(200).json({ success: true, message: "2FA code email sent", data: token, twoFactorCode: twoFactorCode });
+      }
+    });
+
 
     if (!user.lastLoginDate || !isSameDay(user.lastLoginDate, new Date())) {
       user.loginCount = 1;

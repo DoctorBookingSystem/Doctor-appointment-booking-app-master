@@ -45,6 +45,7 @@ function ResetPassword() {
     } catch (error) {
       console.error(error);
       toast.error("Error resetting password.");
+    }
     checkPasswordStrength(newPassword);
     if (passwordValidation.isValid) {
       try {
