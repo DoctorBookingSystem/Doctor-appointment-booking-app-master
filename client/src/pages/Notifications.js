@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import { hideLoading, showLoading } from "../redux/alertsSlice";
 import { setUser } from "../redux/userSlice";
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 function Notifications() {
   const { user } = useSelector((state) => state.user);

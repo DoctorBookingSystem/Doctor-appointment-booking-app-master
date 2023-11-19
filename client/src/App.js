@@ -1,11 +1,11 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import EnterCode from "./pages/EnterCode";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Register from "./pages/Register";
 import TermsAndConditions from "./pages/TermsAndConditions";
-import React, { useEffect } from "react";
+import React from "react";
 import { Toaster } from "react-hot-toast";
 import Home from "./pages/Home";
 import { useSelector } from "react-redux";
@@ -27,10 +27,7 @@ import BookAppointment from "./pages/BookAppointment";
 import Appointments from "./pages/Appointments";
 import DoctorAppointments from "./pages/Doctor/DoctorAppointments";
 import DoctorTerms from "./pages/DoctorTerms";
-import Profile from "./pages/Doctor/Profile";
 import RiskAssessment from "./pages/Admin/RiskAssessment";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
 import RecoverAccount from "./pages/RecoverAccount";
 
 function App() {
