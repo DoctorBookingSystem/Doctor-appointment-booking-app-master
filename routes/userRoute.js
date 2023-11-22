@@ -1267,7 +1267,7 @@ router.post('/updatePatientInfo', async (req, res) => {
 // Multer configuration for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "client/uploads/"); // Folder where files will be saved
+    cb(null, "client/src/pages/uploads/"); // Folder where files will be saved
   },
   filename: function (req, file, cb) {
     const ext = path.extname(file.originalname);
