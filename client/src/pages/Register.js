@@ -102,6 +102,18 @@ function Register() {
               <Select.Option value="Patient">Patient</Select.Option>
             </Select>
           </Form.Item>
+          <Form.Item name="agreedToTerms" valuePropName="checked" rules={[{ required: true, message: "You must agree to the terms and conditions." }]}>
+          <Checkbox>
+            I agree/I have carefully read the terms and conditions{" "}
+            {userType === "Doctor" ? (
+              <Link to="/doctor-terms">(Read Terms and Conditions for Doctors)</Link>
+            ) : (
+              <Link to="/patient-terms">
+                (Read Terms and Conditions for Patients)
+              </Link>
+            )}
+          </Checkbox>
+        </Form.Item>
           <Button
             className="primary-button my-2 full-width-button"
             htmlType="submit"
