@@ -8,6 +8,8 @@ import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import MedicalForm from "../components/MedicalForm";
 import moment from "moment";
+import Cookies from "js-cookie";
+
 
 function HealthInformation() {
   const { user } = useSelector((state) => state.user);
@@ -16,6 +18,8 @@ function HealthInformation() {
   const [count, setCount] = useState(0);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [buttonEnabled, setButtonEnabled] = useState(true);
+
   const handleRequest = async () =>{
     try {
       dispatch(showLoading());
@@ -104,6 +108,13 @@ function HealthInformation() {
 
   useEffect(() => {
     getUserData();
+    const cookieExists = Cookies.get("buttonDisabled");
+    if (cookieExists) {
+      const expirationTime = new Date(cookieExists);
+      if (expirationTime > new Date()) {
+        setButtonEnabled(false);
+      }
+    }
   }, []);
   
   return (
@@ -147,9 +158,12 @@ function HealthInformation() {
                 className="primary-button"
                 htmlType="submit"
                 onClick={handleRequest}
-                disabled={count !== 0}
+                // disabled={count !== 0}
+                disabled={!buttonEnabled}
               >
-              {count === 0 ? 'Request Changes' : 'Changes Requested'}
+              {buttonEnabled
+                ? "Request Changes"
+                : "Changes Requested"}
             </Button>
             </div>
           </div>

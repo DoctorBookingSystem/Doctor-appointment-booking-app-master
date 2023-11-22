@@ -378,10 +378,11 @@ router.post("/reset-password", async (req, res) => {
 });
 
 router.post("/validate-password", async (req, res) => {
-  const userEmail = "kumailkazmi14@gmail.com";
+  const userEmail = req.body.email;
+  const encryptedEmail = encryptData(userEmail);
 
   try {
-    const user = await User.findOne({ email: userEmail });
+    const user = await User.findOne({ email: encryptedEmail});
 
     if (!user) {
       return res.status(200).send({ message: "User does not exist", success: false });
