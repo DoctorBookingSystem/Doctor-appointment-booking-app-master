@@ -57,7 +57,7 @@ function ResetPassword() {
 
         // Call the reset password API endpoint
         const response = await axios.post("/api/user/reset-password", { resetCode, newPassword });
-        if (response.data.success == true){
+        if (response.data.success === true){
           toast.success("Password changed successfully!");
           navigate("/login");
         }
@@ -142,7 +142,6 @@ function ResetPassword() {
       </div>
     </div>
   );
-}
+};
 
 export default ResetPassword;
-
