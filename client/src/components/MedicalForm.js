@@ -1,5 +1,4 @@
-import { Form, Input, Select, Radio, Button, Row, Col } from 'antd';
-import moment from "moment";
+import { Form, Input, Radio, Button, Row, Col } from 'antd';
 import React from "react";
 import axios from 'axios';
 import { toast } from "react-hot-toast";
@@ -45,7 +44,7 @@ function MedicalForm({ onFinish, initialValues }) {
       <Row gutter={20}>
         <Col span={8} xs={24} sm={12} lg={8}>
           <Form.Item 
-            label="phoneNumber" 
+            label="Phone Number" 
             name="phoneNumber"
             rules={[{ required: true }]}
             >
