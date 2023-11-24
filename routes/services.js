@@ -33,6 +33,7 @@ async function updateTwoFactorSecret(userEmail, secret) {
 
   function decryptData(userData) {
     try {
+      console.log("User data: "+userData);
       const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(SECRET_KEY, 'hex'),  Buffer.from(IV1, 'hex'));
       const sensitiveData = userData;
       let decryptedData = decipher.update(sensitiveData, 'hex', 'utf8');

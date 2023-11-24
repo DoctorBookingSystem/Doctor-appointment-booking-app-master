@@ -21,14 +21,16 @@ function HealthInformation() {
 
   const handleRequest = async () =>{
     try {
+      const { userId, name, lastName } = user1;
+
       dispatch(showLoading());
       setCount(count+1);
       const response = await axios.post(
         "/api/admin/request_changes",
         {
-          _id: params.userId,
-          name: user1.name,
-          lastName: user1.lastName
+          _id: userId,
+          name: name,
+          lastName: lastName
         },
         {
           headers: {
@@ -56,10 +58,6 @@ function HealthInformation() {
         {
           ...values,
           _id: params.userId,
-          // timings: [
-          //   moment(values.timings[0]).format("h:mm a"),
-          //   moment(values.timings[1]).format("h:mm a"),
-          // ],
         },
         {
           headers: {
@@ -150,7 +148,6 @@ function HealthInformation() {
                 className="primary-button"
                 htmlType="submit"
                 onClick={handleRequest}
-                // disabled={count !== 0}
                 disabled={count !== 0}
               >
               {count === 0 ? 'Request Changes' : 'Changes Requested'}
@@ -163,7 +160,7 @@ function HealthInformation() {
     <MedicalForm
       onFinish={onFinish}
       initialValues={{
-        ...user1,
+        ...user,
       }}
     />      
     )}
@@ -173,7 +170,7 @@ function HealthInformation() {
     <MedicalForm
       onFinish={onFinish}
       initialValues={{
-        ...user1,
+        ...user,
       }}
     />
     </div>

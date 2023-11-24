@@ -465,7 +465,6 @@ router.post("/validate-password", async (req, res) => {
 router.post("/get-user-info-by-id", authMiddleware, async (req, res) => {
   try {
      const user = await User.findOne({ _id: req.body.userId });
-     console.log(user);
      const decryptedName = decryptData(user.name);
      const decryptedLName = decryptData(user.lastName);
      const decryptedNumber = decryptData(user.phoneNumber);
@@ -702,7 +701,7 @@ router.post(
     try {
       const user = await User.findOne({ _id: req.body.userId });
       let decryptName = '';
-      if (user.email !== '223d1a9a7c1e4c40a14a741445f3e45f19dbe7b2a22c14d3a4abe3a8decf9096' && user.isDoctor != true){
+      if (user.email !== '283160a602594ecbd593521e55753243' && user.isDoctor != true){
         decryptName = decryptData(user.name);
         decryptLName = decryptData(user.lastName);
         decryptPhoneNumber = decryptData(user.phoneNumber);
@@ -767,7 +766,7 @@ router.post("/delete-all-notifications", authMiddleware, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.body.userId });
     let decryptName = '';
-    if (user.email !== '223d1a9a7c1e4c40a14a741445f3e45f19dbe7b2a22c14d3a4abe3a8decf9096' && user.isDoctor != true ){
+    if (user.email !== '283160a602594ecbd593521e55753243' && user.isDoctor != true ){
       decryptName = decryptData(user.name);
       decryptLName = decryptData(user.lastName);
       decryptPhoneNumber = decryptData(user.phoneNumber);
@@ -844,24 +843,38 @@ router.get("/get-all-approved-doctors", authMiddleware, async (req, res) => {
 });
 
 router.post("/book-appointment", authMiddleware, async (req, res) => {
+
+  const newAppointment = new Appointment(req.body);
+  await newAppointment.save();
+  const user = await User.findOne({ _id: req.body.doctorInfo.userId });
+  const userConsent = await User.findOne({ _id: req.body.userInfo._id });
+  userConsent.consent = true;
+  await userConsent.save();
+  
   try {
-    const userConsent = await User.findOne({ _id: req.body.userInfo._id });
     req.body.status = "pending";
-    req.body.date = moment(req.body.date, "DD-MM-YYYY").toString();
-    req.body.time = moment(req.body.time, "HH:mm").toString();
-    const newAppointment = new Appointment(req.body);
-    await newAppointment.save();
-    userConsent.consent = true;
-    await userConsent.save();
-    //pushing notification to doctor based on his userid
-    const user = await User.findOne({ _id: req.body.doctorInfo.userId });
+    req.body.date = moment(req.body.date, "MM-DD-YYYY").format("MM-DD-YYYY");
+    req.body.time = moment(req.body.time, "h:mm A").format("h:mm A");
+
     user.unseenNotifications.push({
       type: "new-appointment-request",
-      message: `A new appointment request has been made by ${decryptData(req.body.userInfo.name)}`,
+      message: `A new appointment request has been made by ${req.body.userInfo.name} ${req.body.userInfo.lastName}.`,
       onClickPath: "/doctor/appointments",
     });
     await user.save();
-
+    res.status(200).send({
+      message: "Appointment booked successfully",
+      success: true,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      message: "Error booking appointment",
+      success: false,
+      error,
+    });
+  }
+  try{
     const adminEmail = "administrator@gmail.com";
 
     if (req.body.userInfo.email !== adminEmail) {
@@ -1206,7 +1219,7 @@ router.post('/updatePatientInfo', async (req, res) => {
   try {
     const formData = req.body; 
     const user = await User.findOne({ _id: formData.userId });
-    console.log(user.email);
+    //console.log(user.email);
     const encryptedNumber = encryptData(formData.phoneNumber);
     const encryptedAge = encryptData(formData.patientInfo[0].age);
     const encryptedHeight = encryptData(formData.patientInfo[0].height);
