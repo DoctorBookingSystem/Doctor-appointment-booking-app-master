@@ -381,11 +381,12 @@ router.post("/reset-password", async (req, res) => {
 });
 
 router.post("/validate-password", async (req, res) => {
-  const userEmail = req.body.email;
-  const encryptedEmail = encryptData('fiudoctorbooking@gmail.com');
+  // const userEmail = req.body.email;
+  // const encryptedEmail = encryptData('fiudoctorbooking@gmail.com');
 
+  const userEmail = "223d1a9a7c1e4c40a14a741445f3e45f19dbe7b2a22c14d3a4abe3a8decf9096";
   try {
-    const user = await User.findOne({ email: encryptedEmail});
+    const user = await User.findOne({ email: userEmail});
 
     if (!user) {
       return res.status(200).send({ message: "User does not exist", success: false });
@@ -413,7 +414,7 @@ router.post("/validate-password", async (req, res) => {
 
       const mailOptions = {
         from: 'FIUDoctorBooking@fiu.edu',
-        to: decryptedEmail, 
+        to: decryptData(user.email), 
         subject: 'Account Security Alert - Potential Breach Detected',
         html: ` <p>
         Dear ${decryptData(user.name)},
@@ -701,7 +702,7 @@ router.post(
     try {
       const user = await User.findOne({ _id: req.body.userId });
       let decryptName = '';
-      if (user.email !== '283160a602594ecbd593521e55753243' && user.isDoctor != true){
+      if (user.email !== '223d1a9a7c1e4c40a14a741445f3e45f19dbe7b2a22c14d3a4abe3a8decf9096' && user.isDoctor != true){
         decryptName = decryptData(user.name);
         decryptLName = decryptData(user.lastName);
         decryptPhoneNumber = decryptData(user.phoneNumber);
@@ -766,7 +767,7 @@ router.post("/delete-all-notifications", authMiddleware, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.body.userId });
     let decryptName = '';
-    if (user.email !== '283160a602594ecbd593521e55753243' && user.isDoctor != true ){
+    if (user.email !== '223d1a9a7c1e4c40a14a741445f3e45f19dbe7b2a22c14d3a4abe3a8decf9096' && user.isDoctor != true ){
       decryptName = decryptData(user.name);
       decryptLName = decryptData(user.lastName);
       decryptPhoneNumber = decryptData(user.phoneNumber);
@@ -850,11 +851,13 @@ router.post("/book-appointment", authMiddleware, async (req, res) => {
     req.body.time = moment(req.body.time, "HH:mm").toString();
     const newAppointment = new Appointment(req.body);
     await newAppointment.save();
+    userConsent.consent = true;
+    await userConsent.save();
     //pushing notification to doctor based on his userid
     const user = await User.findOne({ _id: req.body.doctorInfo.userId });
     user.unseenNotifications.push({
       type: "new-appointment-request",
-      message: `A new appointment request has been made by ${req.body.userInfo.name}`,
+      message: `A new appointment request has been made by ${decryptData(req.body.userInfo.name)}`,
       onClickPath: "/doctor/appointments",
     });
     await user.save();
@@ -867,7 +870,7 @@ router.post("/book-appointment", authMiddleware, async (req, res) => {
         const userLogs = adminUser.userLogs;
         userLogs.push({
           type: "user-appointment",
-          message: `User ${req.body.userInfo.name} (${req.body.userInfo.email}) booked an appointment with Dr. ${user.name} for ${moment(req.body.date).format('MMMM Do YYYY')}`,
+          message: `User ${decryptData(req.body.userInfo.name)} (${decryptData(req.body.userInfo.email)}) booked an appointment with Dr. ${user.name} for ${moment(req.body.date).format('MM-DD-YYYY')}`,
           onClickPath: "/admin/userlogs",
         });
       
@@ -876,11 +879,11 @@ router.post("/book-appointment", authMiddleware, async (req, res) => {
       }
     }
    
-    const emailSent = await sendAppointmentConfirmationEmail(req.body.userInfo.email, user, req.body);
+    const emailSent = await sendAppointmentConfirmationEmail(decryptData(req.body.userInfo.email), user, req.body);
 
     if (emailSent) {
       // The email has been sent successfully, now send feedback email
-      const feedbackEmailSent = await sendFeedbackEmail(req.body.userInfo.email, req.body);
+      const feedbackEmailSent = await sendFeedbackEmail(decryptData(req.body.userInfo.email), req.body);
 
       if (feedbackEmailSent) {
         console.log("Feedback email sent successfully");
@@ -897,16 +900,13 @@ router.post("/book-appointment", authMiddleware, async (req, res) => {
     });
 
 
-    req.body.status = "pending";
-    req.body.date = moment(req.body.date, "MM-DD-YYYY").format("MM-DD-YYYY");
-    req.body.time = moment(req.body.time, "h:mm A").format("h:mm A");
-
-    userConsent.consent = true;
-    await userConsent.save();
+    // req.body.status = "pending";
+    // req.body.date = moment(req.body.date, "MM-DD-YYYY").format("MM-DD-YYYY");
+    // req.body.time = moment(req.body.time, "h:mm A").format("h:mm A");
 
     user.unseenNotifications.push({
       type: "new-appointment-request",
-      message: `A new appointment request has been made by ${req.body.userInfo.name} ${req.body.userInfo.lastName}.`,
+      message: `A new appointment request has been made by ${decryptData(req.body.userInfo.name)} ${decryptData(req.body.userInfo.lastName)}.`,
       onClickPath: "/doctor/appointments",
     });
     await user.save();
@@ -940,7 +940,7 @@ async function sendAppointmentConfirmationEmail(userEmail, doctor, appointmentDe
       to: userEmail,
       subject: 'Appointment Confirmation - FIU Doctor Booking',
       html: `
-        <p>Dear ${appointmentDetails.userInfo.name},</p>
+        <p>Dear ${decryptData(appointmentDetails.userInfo.name)},</p>
         <p>Your appointment with Dr. ${doctor.name} has been confirmed.</p>
         <p>Date: ${appointmentDetails.date}</p>
         <p>Time: ${appointmentDetails.time}</p>
