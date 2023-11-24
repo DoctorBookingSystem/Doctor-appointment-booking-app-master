@@ -8,7 +8,6 @@ import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import MedicalForm from "../components/MedicalForm";
 import moment from "moment";
-import Cookies from "js-cookie";
 
 
 function HealthInformation() {
@@ -108,13 +107,6 @@ function HealthInformation() {
 
   useEffect(() => {
     getUserData();
-    const cookieExists = Cookies.get("buttonDisabled");
-    if (cookieExists) {
-      const expirationTime = new Date(cookieExists);
-      if (expirationTime > new Date()) {
-        setButtonEnabled(false);
-      }
-    }
   }, []);
   
   return (
@@ -159,11 +151,9 @@ function HealthInformation() {
                 htmlType="submit"
                 onClick={handleRequest}
                 // disabled={count !== 0}
-                disabled={!buttonEnabled}
+                disabled={count !== 0}
               >
-              {buttonEnabled
-                ? "Request Changes"
-                : "Changes Requested"}
+              {count === 0 ? 'Request Changes' : 'Changes Requested'}
             </Button>
             </div>
           </div>

@@ -25,18 +25,21 @@ const crypto = require('crypto');
 
 router.post("/register", async (req, res) => {
   try {
-    const encryptedEmail = encryptData(req.body.email);
+
+    const {email, name, lastName, phoneNumber, agreedToTerms} = req.body;
+    console.log("Original Values:", { email, phoneNumber, name, lastName });
+
+    const encryptedEmail = encryptData(email);
     const userExists = await User.findOne({ email: encryptedEmail });
-    const encryptedPhoneNumber = encryptData(req.body.phoneNumber);
-    const encryptedName = encryptData(req.body.name);
-    const encryptedLName = encryptData(req.body.lastName);
+    const encryptedPhoneNumber = encryptData(phoneNumber);
+    const encryptedName = encryptData(name);
+    const encryptedLName = encryptData(lastName);
 
     if (userExists) {
       return res
         .status(200)
         .send({ message: "User already exists", success: false });
     }
-    const {name, phoneNumber, email, password, agreedToTerms} = req.body;
 
     if (!agreedToTerms) {
       return res.status(400).send({ message: "You must agree to the terms", success: false });
@@ -86,7 +89,7 @@ router.post("/login" , async (req, res) => {
         service: 'gmail',
         auth: {
           user: 'FIUDoctorBooking@gmail.com',
-          pass: 'dastwmvuhcvcddwj',
+          pass: "fiudoctorbookingpw",
         },
       });
 
@@ -149,7 +152,7 @@ router.post("/login" , async (req, res) => {
 
     // Reset login attempts on successful login
     user.loginAttempts = 0;
-    await user.save();
+    //await user.save();
 
     twoFactorCode = await updateTwoFactorSecret(encryptedEnteredEmail, secret);
 
@@ -157,7 +160,7 @@ router.post("/login" , async (req, res) => {
       service: 'gmail',
       auth: {
         user: 'FIUDoctorBooking@gmail.com',
-        pass: 'dastwmvuhcvcddwj',
+        pass: "evgchbhsqyztadvo",
       },
     });
 
@@ -274,7 +277,7 @@ router.post("/forgot-password", async (req, res) => {
       service: "gmail",
       auth: {
         user: "FIUDoctorBooking@gmail.com",
-        pass: "dastwmvuhcvcddwj",
+        pass: "evgchbhsqyztadvo",
       },
     });
 
@@ -379,7 +382,7 @@ router.post("/reset-password", async (req, res) => {
 
 router.post("/validate-password", async (req, res) => {
   const userEmail = req.body.email;
-  const encryptedEmail = encryptData(userEmail);
+  const encryptedEmail = encryptData('fiudoctorbooking@gmail.com');
 
   try {
     const user = await User.findOne({ email: encryptedEmail});
@@ -461,6 +464,7 @@ router.post("/validate-password", async (req, res) => {
 router.post("/get-user-info-by-id", authMiddleware, async (req, res) => {
   try {
      const user = await User.findOne({ _id: req.body.userId });
+     console.log(user);
      const decryptedName = decryptData(user.name);
      const decryptedLName = decryptData(user.lastName);
      const decryptedNumber = decryptData(user.phoneNumber);
@@ -1202,6 +1206,7 @@ router.post('/updatePatientInfo', async (req, res) => {
   try {
     const formData = req.body; 
     const user = await User.findOne({ _id: formData.userId });
+    console.log(user.email);
     const encryptedNumber = encryptData(formData.phoneNumber);
     const encryptedAge = encryptData(formData.patientInfo[0].age);
     const encryptedHeight = encryptData(formData.patientInfo[0].height);
