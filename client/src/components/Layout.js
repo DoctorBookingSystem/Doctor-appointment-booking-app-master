@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../layout.css";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
@@ -108,6 +108,48 @@ function Layout({ children }) {
 
   const menuToBeRendered = user?.isAdmin ? adminMenu : user?.isDoctor ? doctorMenu : userMenu;
   const role = user?.isAdmin ? "Admin" : user?.isDoctor ? "Doctor" : "User";
+  const token = localStorage.getItem("token");
+
+    const checkForActivity = () => {
+    const expireTime = localStorage.getItem("expireTime");
+    if (expireTime < Date.now()){
+      localStorage.clear();
+      dispatch(clearUser());
+      navigate("/login");
+      //toast.error("You were logged out due to inactivity.");
+      window.location.reload();
+    }
+  }
+
+  const updateExpireTime = () =>{
+    const expireTime = Date.now() + 900000;
+    localStorage.setItem("expireTime", expireTime);
+  }
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      checkForActivity();
+    },5000);
+  },[]);
+
+  useEffect(() => {
+    if (token)
+      updateExpireTime();
+    
+    window.addEventListener("click", updateExpireTime);
+    window.addEventListener("keypress", updateExpireTime);
+    window.addEventListener("scroll", updateExpireTime);
+    window.addEventListener("mousemove", updateExpireTime);
+
+    return () =>{
+      window.addEventListener("click", updateExpireTime);
+      window.addEventListener("keypress", updateExpireTime);
+      window.addEventListener("scroll", updateExpireTime);
+      window.addEventListener("mousemove", updateExpireTime);
+    }
+
+  }, []);
+
   return (
     <div className="main">
       <div className="d-flex layout">

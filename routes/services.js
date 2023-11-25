@@ -24,19 +24,16 @@ async function updateTwoFactorSecret(userEmail, secret) {
   }
 
   function encryptData(userData) {
-      const sensitiveData = userData;
       const cipher1 = crypto.createCipheriv('aes-256-cbc', Buffer.from(SECRET_KEY, 'hex'), Buffer.from(IV1, 'hex'));
-      let encryptedData = cipher1.update(sensitiveData, 'utf8', 'hex');
+      let encryptedData = cipher1.update(userData, 'utf8', 'hex');
       encryptedData += cipher1.final('hex');
       return encryptedData;
   }
 
   function decryptData(userData) {
     try {
-      console.log("User data: "+userData);
       const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(SECRET_KEY, 'hex'),  Buffer.from(IV1, 'hex'));
-      const sensitiveData = userData;
-      let decryptedData = decipher.update(sensitiveData, 'hex', 'utf8');
+      let decryptedData = decipher.update(userData, 'hex', 'utf8');
       decryptedData += decipher.final('utf8');
       return decryptedData;
     } catch (error) {

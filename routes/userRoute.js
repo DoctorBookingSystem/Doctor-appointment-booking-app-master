@@ -89,7 +89,7 @@ router.post("/login" , async (req, res) => {
         service: 'gmail',
         auth: {
           user: 'FIUDoctorBooking@gmail.com',
-          pass: "fiudoctorbookingpw",
+          pass: "evgchbhsqyztadvo",
         },
       });
 
@@ -1178,7 +1178,7 @@ router.post("/verify-2fa", async (req, res) => {
         service: 'gmail',
         auth: {
           user: 'FIUDoctorBooking@gmail.com',
-          pass: 'dastwmvuhcvcddwj',
+          pass: 'evgchbhsqyztadvo',
         },
       });
 
@@ -1219,7 +1219,6 @@ router.post('/updatePatientInfo', async (req, res) => {
   try {
     const formData = req.body; 
     const user = await User.findOne({ _id: formData.userId });
-    //console.log(user.email);
     const encryptedNumber = encryptData(formData.phoneNumber);
     const encryptedAge = encryptData(formData.patientInfo[0].age);
     const encryptedHeight = encryptData(formData.patientInfo[0].height);
@@ -1378,8 +1377,8 @@ router.post("/set_request", authMiddleware, async (req, res) => {
 router.delete("/cancel-appointment/:userId/", authMiddleware, async (req, res) => {
   try {
     const userId = req.params.userId;
-    const deletedUser = await Appointment.findByIdAndRemove(userId);
-    if (!deletedUser) {
+    const deletedAppointment = await Appointment.findByIdAndRemove(userId);
+    if (!deletedAppointment) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
     return res.status(200).json({ success: true, message: "You have canceled your appointment." });
