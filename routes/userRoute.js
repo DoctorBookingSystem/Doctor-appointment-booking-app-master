@@ -1103,7 +1103,8 @@ router.post("/check-booking-avilability", authMiddleware, async (req, res) => {
           });    
           if (
             doctorStartTime.isAfter(moment(time, "h:mm A")) ||
-            doctorEndTime.isBefore(moment(time, "h:mm A")) 
+            doctorEndTime.isBefore(moment(time, "h:mm A"))  ||
+            moment(time, "h:mm A").isBefore(moment())
           ) {
             return res.status(200).send({
               message: "Invalid appointment time",
@@ -1436,7 +1437,7 @@ router.post("/forgot-password", async (req, res) => {
       service: "gmail",
       auth: {
         user: "FIUDoctorBooking@gmail.com",
-        pass: "dastwmvuhcvcddwj",
+        pass: "evgchbhsqyztadvo",
       },
     });
     const decryptedEmail = decryptData(encryptedEnteredEmail);
@@ -1571,7 +1572,7 @@ router.post("/temp-password", async (req, res) => {
       service: 'gmail',
       auth: {
         user: 'FIUDoctorBooking@gmail.com',
-        pass: 'dastwmvuhcvcddwj',
+        pass: 'evgchbhsqyztadvo',
       },
     });
 
