@@ -43,4 +43,4 @@ async function updateTwoFactorSecret(userEmail, secret) {
     }
   }
   
-  module.exports = { updateTwoFactorSecret, encryptData, decryptData };
+module.exports = { updateTwoFactorSecret, encryptData, decryptData };

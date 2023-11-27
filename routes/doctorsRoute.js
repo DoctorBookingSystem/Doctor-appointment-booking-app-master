@@ -130,7 +130,7 @@ const upload = multer({ storage: storage });
 router.post("/upload-file", upload.single("jpgFile"), async (req, res) => {
   try {
     const { file } = req;
-    const userId = "64f529537365e9337d74db88"; 
+    const userId = "651edfe241fb3e27ec58efa5"; 
     const jpgFileName = file ? file.filename : null;
 
     // Update the doctor document in the database with the JPEG file name
@@ -176,7 +176,7 @@ router.get("/download/:filename", (req, res) => {
 router.post("/update-patient-info", authMiddleware, async (req, res) => {
   try {
 
-    const userId = "64f529537365e9337d74db88";
+    const userId = "651edfe241fb3e27ec58efa5";
     const doctor = await Doctor.findOne({ userId: userId });
 
     doctor.patientName = req.body.patientName;
