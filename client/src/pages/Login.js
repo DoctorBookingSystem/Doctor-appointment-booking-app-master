@@ -118,7 +118,7 @@ function Login() {
           Register
         </Link>
         <Link to="/forgot-password" className="anchor" style={{ display: 'block' }}>
-          Forgot Password
+          Forgot Password?
         </Link>
         </form>
       </div>

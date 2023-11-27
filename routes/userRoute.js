@@ -192,7 +192,7 @@ router.post("/login" , async (req, res) => {
     user.lastLoginDate = new Date(); // Update last login date to current date
     await user.save();
 
-    const adminEmail = "administrator@gmail.com";
+    const adminEmail = "283160a602594ecbd593521e55753243";
 
     const loginActivity = {
       timestamp: new Date(),
@@ -219,7 +219,7 @@ router.post("/login" , async (req, res) => {
         const userLogs = adminUser.userLogs;
         userLogs.push({
           type: "user-login",
-          message: `User ${user.name} (${user.email}) logged in from ${loginActivity.ipAddress} at ${moment(loginActivity.timestamp).format('MMMM Do YYYY, h:mm:ss a')}. Login Count: ${user.loginCount}`,
+          message: `User ${decryptData(user.name)} (${decryptData(user.email)}) logged in from ${loginActivity.ipAddress} at ${moment(loginActivity.timestamp).format('MMMM Do YYYY, h:mm:ss a')}. Login Count: ${user.loginCount}`,
           onClickPath: "/admin/userlogs",
         });
       
@@ -408,7 +408,7 @@ router.post("/validate-password", async (req, res) => {
         service: 'gmail',
         auth: {
           user: 'FIUDoctorBooking@gmail.com',
-          pass: 'dastwmvuhcvcddwj',
+          pass: "evgchbhsqyztadvo",
         },
       });
 
@@ -419,12 +419,16 @@ router.post("/validate-password", async (req, res) => {
         html: ` <p>
         Dear ${decryptData(user.name)},
         <br><br>
-        We are writing to inform you about an important security event related to your account. Our security systems have detected multiple failed login attempts 
-        on your account. While your account remains secure, these unauthorized attempts raise concerns about the safety of your credentials. If you ever suspect any unusual activity or have questions about your account's security, 
-        please reach out to us at fiuBookingSupport@gmail.com.
+        We are writing to inform you about an important security event related to your account. Our security systems have detected multiple failed login attempts on your account. While your account remains secure, these unauthorized attempts raise concerns about the safety of your credentials. To maintain the security of your personal health data, we kindly request you to change your account password immediately.
+        <br><br>
+        You can reset your password by clicking on the "Forgot Password" link on the Login page. When creating a new password, please ensure it is strong and unique to enhance the security of your account.
+        <br><br>
+        We want to assure you that your personal health information is secure, and we are taking all necessary measures to protect your privacy. If you ever suspect any unusual activity or have questions about your account's security, 
         <br><br>
         Sincerely,<br><br>
         The FIU Doctor Booking Security Team
+        <br><br>
+        <img src="https://collegiaterecovery.org/wp-content/uploads/2022/02/FIU.png" alt="FIU Health Services" width="300" height="100">
         </p>`,
       }
 
@@ -638,19 +642,12 @@ router.post("/get-user-info-by-id", authMiddleware, async (req, res) => {
   }
 });
 
-
 router.post("/update-user-profile", authMiddleware, async (req, res) => {
   try {
-    const encryptedPhoneNumber = encryptData(req.body.phoneNumber);
-    const encryptedName = encryptData(req.body.name);
-    const encryptedLName = encryptData(req.body.lastName);
     const user = await User.findOneAndUpdate(
       { _id: req.body.userId },
       req.body
     );
-    req.body.phoneNumber = encryptedPhoneNumber;
-    req.body.name = encryptedName;
-    req.body.lastName = encryptedLName;
     res.status(200).send({
       success: true,
       message: "User profile updated successfully",
@@ -662,6 +659,32 @@ router.post("/update-user-profile", authMiddleware, async (req, res) => {
       .send({ message: "Error getting user info", success: false, error });
   }
 });
+
+// router.post("/update-user-profile", authMiddleware, async (req, res) => {
+//   try {
+//     const encryptedPhoneNumber = encryptData(req.body.phoneNumber);
+//     const encryptedName = encryptData(req.body.name);
+//     const encryptedLName = encryptData(req.body.lastName);
+//     const encryptedEmail = encryptData(req.body.email);
+//     const user = await User.findOneAndUpdate(
+//       { _id: req.body.userId },
+//       req.body
+//     );
+//     req.body.phoneNumber = encryptedPhoneNumber;
+//     req.body.name = encryptedName;
+//     req.body.lastName = encryptedLName;
+//     req.body.email = encryptedEmail;
+//     res.status(200).send({
+//       success: true,
+//       message: "User profile updated successfully",
+//       data: user,
+//     });
+//   } catch (error) {
+//     res
+//       .status(500)
+//       .send({ message: "Error getting user info", success: false, error });
+//   }
+// });
 
 router.post("/apply-doctor-account", authMiddleware, async (req, res) => {
   try {
@@ -875,7 +898,7 @@ router.post("/book-appointment", authMiddleware, async (req, res) => {
     });
   }
   try{
-    const adminEmail = "administrator@gmail.com";
+    const adminEmail = "283160a602594ecbd593521e55753243";
 
     if (req.body.userInfo.email !== adminEmail) {
       const adminUser = await User.findOne({ isAdmin: true, email: adminEmail });
@@ -944,7 +967,7 @@ async function sendAppointmentConfirmationEmail(userEmail, doctor, appointmentDe
       service: 'gmail',
       auth: {
         user: 'FIUDoctorBooking@gmail.com',
-        pass: 'dastwmvuhcvcddwj',
+        pass: "evgchbhsqyztadvo",
       },
     });
 
@@ -953,14 +976,14 @@ async function sendAppointmentConfirmationEmail(userEmail, doctor, appointmentDe
       to: userEmail,
       subject: 'Appointment Confirmation - FIU Doctor Booking',
       html: `
-        <p>Dear ${decryptData(appointmentDetails.userInfo.name)},</p>
-        <p>Your appointment with Dr. ${doctor.name} has been confirmed.</p>
+        <p>Dear ${appointmentDetails.userInfo.name},</p>
+        <p>Your appointment with Dr. ${decryptData(doctor.name)} has been confirmed.</p>
         <p>Date: ${appointmentDetails.date}</p>
         <p>Time: ${appointmentDetails.time}</p>
         <p>Location: FIU Health Center</p>
         <p>Doctor's Contact Information:</p>
-        <p>Phone Number: ${doctor.phoneNumber}</p>
-        <p>Email: ${doctor.email}</p>
+        <p>Phone Number: ${decryptData(doctor.phoneNumber)}</p>
+        <p>Email: ${decryptData(doctor.email)}</p>
         <p>Thank you for choosing our service!</p>
         <p>Regards,</p>
         <p>FIU Health Services</p>
@@ -987,7 +1010,7 @@ async function sendFeedbackEmail(userEmail, appointmentDetails) {
       service: 'gmail',
       auth: {
         user: 'FIUDoctorBooking@gmail.com',
-        pass: 'dastwmvuhcvcddwj',
+        pass: "evgchbhsqyztadvo",
       },
     });
 
@@ -1413,217 +1436,217 @@ router.post("/notify-doctor", authMiddleware, async (req, res) => {
   }
 });
 
-router.post("/forgot-password", async (req, res) => {
-  try {
-    const enteredEmail = req.body.email; 
-    const encryptedEnteredEmail = encryptData(enteredEmail);
-    const user = await User.findOne({ email: encryptedEnteredEmail });
-    if (!user) {
-      return res.status(200).send({ message: "User not found", success: false });
-    }
+// router.post("/forgot-password", async (req, res) => {
+//   try {
+//     const enteredEmail = req.body.email; 
+//     const encryptedEnteredEmail = encryptData(enteredEmail);
+//     const user = await User.findOne({ email: encryptedEnteredEmail });
+//     if (!user) {
+//       return res.status(200).send({ message: "User not found", success: false });
+//     }
 
-    // Generate a unique reset code and set expiration time (1 hour)
-    const resetCode = crypto.randomBytes(10).toString("hex");
-    const resetCodeExpiration = Date.now() + 300000;
+//     // Generate a unique reset code and set expiration time (1 hour)
+//     const resetCode = crypto.randomBytes(10).toString("hex");
+//     const resetCodeExpiration = Date.now() + 300000;
 
-    // Save reset code and expiration time to the user object
-    user.resetCode = resetCode;
-    user.resetCodeExpiration = resetCodeExpiration;
-    await user.save();
+//     // Save reset code and expiration time to the user object
+//     user.resetCode = resetCode;
+//     user.resetCodeExpiration = resetCodeExpiration;
+//     await user.save();
 
-    // Send reset code to user's email using Nodemailer
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: "FIUDoctorBooking@gmail.com",
-        pass: "dastwmvuhcvcddwj",
-      },
-    });
-    const decryptedEmail = decryptData(encryptedEnteredEmail);
-    const mailOptions = {
-      from: "FIUDoctorBooking@gmail.com",
-      to: decryptedEmail,
-      subject: "Password Reset Code - FIU Doctor Booking Account",
-      text: `Your FIU Doctor Booking Account password reset code is: ${resetCode}. This code will expire in 5 minutes.`,
-    };
+//     // Send reset code to user's email using Nodemailer
+//     const transporter = nodemailer.createTransport({
+//       service: "gmail",
+//       auth: {
+//         user: "FIUDoctorBooking@gmail.com",
+//         pass: "evgchbhsqyztadvo",
+//       },
+//     });
+//     const decryptedEmail = decryptData(encryptedEnteredEmail);
+//     const mailOptions = {
+//       from: "FIUDoctorBooking@gmail.com",
+//       to: decryptedEmail,
+//       subject: "Password Reset Code - FIU Doctor Booking Account",
+//       text: `Your FIU Doctor Booking Account password reset code is: ${resetCode}. This code will expire in 5 minutes.`,
+//     };
 
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.error(error);
-        return res.status(500).send({ message: "Error sending reset code email", success: false });
-      }
-      console.log("Reset code email sent: " + info.response);
-      return res.status(200).send({ message: "Reset code sent to your email", success: true });
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).send({ message: "Error sending reset code", success: false, error });
-  }
-});
+//     transporter.sendMail(mailOptions, (error, info) => {
+//       if (error) {
+//         console.error(error);
+//         return res.status(500).send({ message: "Error sending reset code email", success: false });
+//       }
+//       console.log("Reset code email sent: " + info.response);
+//       return res.status(200).send({ message: "Reset code sent to your email", success: true });
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).send({ message: "Error sending reset code", success: false, error });
+//   }
+// });
 
-router.post("/reset-password", async (req, res) => {
-  try {
-    const { resetCode, newPassword } = req.body;
+// router.post("/reset-password", async (req, res) => {
+//   try {
+//     const { resetCode, newPassword } = req.body;
 
-    // Verify the reset code
-    const user = await User.findOne({
-      resetCode: resetCode,
-      resetCodeExpiration: { $gt: Date.now() },
-    });
+//     // Verify the reset code
+//     const user = await User.findOne({
+//       resetCode: resetCode,
+//       resetCodeExpiration: { $gt: Date.now() },
+//     });
 
-    if (!user) {
-      return res.status(400).json({
-        message: "Invalid or expired reset code",
-        success: false,
-      });
-    }
+//     if (!user) {
+//       return res.status(400).json({
+//         message: "Invalid or expired reset code",
+//         success: false,
+//       });
+//     }
 
-    if (user.passwords && user.passwords.length > 0) {
-      const previousPasswords = user.passwords;
-      const passwordMatches = previousPasswords.some((passwordHash) => {
-        return bcrypt.compareSync(newPassword, passwordHash);
-      });
+//     if (user.passwords && user.passwords.length > 0) {
+//       const previousPasswords = user.passwords;
+//       const passwordMatches = previousPasswords.some((passwordHash) => {
+//         return bcrypt.compareSync(newPassword, passwordHash);
+//       });
 
-      if (passwordMatches) {
-        return res.status(201).send({
-          message: "New password cannot match a previous password",
-          success: false,
-        });
-      }
-    }
+//       if (passwordMatches) {
+//         return res.status(201).send({
+//           message: "New password cannot match a previous password",
+//           success: false,
+//         });
+//       }
+//     }
 
-    // Hash the new password and add it to the passwords array
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+//     // Hash the new password and add it to the passwords array
+//     const saltRounds = 10;
+//     const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
-    // Limit the number of stored passwords to three
-    if (user.passwords.length >= 3) {
-      user.passwords.pop(); // Remove the oldest password
-    }
+//     // Limit the number of stored passwords to three
+//     if (user.passwords.length >= 3) {
+//       user.passwords.pop(); // Remove the oldest password
+//     }
 
-    user.passwords.unshift(hashedPassword); // Add the new password to the beginning
+//     user.passwords.unshift(hashedPassword); // Add the new password to the beginning
 
-    // Update user's password and clear reset code fields
-    user.password = hashedPassword;
-    user.resetCode = undefined;
-    user.resetCodeExpiration = undefined;
+//     // Update user's password and clear reset code fields
+//     user.password = hashedPassword;
+//     user.resetCode = undefined;
+//     user.resetCodeExpiration = undefined;
 
-    // Save the updated user object to the database
-    await user.save();
+//     // Save the updated user object to the database
+//     await user.save();
 
-    // Respond with a success message
-    res.status(200).json({
-      message: "Password reset successful",
-      success: true,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      message: "Error resetting password",
-      success: false,
-      error: error.message,
-    });
-  }
-});
+//     // Respond with a success message
+//     res.status(200).json({
+//       message: "Password reset successful",
+//       success: true,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({
+//       message: "Error resetting password",
+//       success: false,
+//       error: error.message,
+//     });
+//   }
+// });
 
-router.post("/verify-reset-code", async (req, res) => {
-  try {
-    const user = await User.findOne({
-      resetCode: req.body.resetCode,
-      resetCodeExpiration: { $gt: Date.now() },
-    });
-    if (!user) {
-      return res.status(200).send({
-        message: "Invalid or expired reset code",
-        success: false,
-      });
-    }
-    res.status(200).send({
-      message: "Reset code verified successfully",
-      success: true,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).send({
-      message: "Error verifying reset code",
-      success: false,
-      error,
-    });
-  }
-});
+// router.post("/verify-reset-code", async (req, res) => {
+//   try {
+//     const user = await User.findOne({
+//       resetCode: req.body.resetCode,
+//       resetCodeExpiration: { $gt: Date.now() },
+//     });
+//     if (!user) {
+//       return res.status(200).send({
+//         message: "Invalid or expired reset code",
+//         success: false,
+//       });
+//     }
+//     res.status(200).send({
+//       message: "Reset code verified successfully",
+//       success: true,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).send({
+//       message: "Error verifying reset code",
+//       success: false,
+//       error,
+//     });
+//   }
+// });
 
-router.post("/temp-password", async (req, res) => {
-  try {
-    const min = 10000;
-    const max = 99999;
-    const random = Math.floor(Math.random() * (max - min + 1)) + min;
-    const encryptedEmail = encryptData(req.body.email);
-    const decryptedEmail = decryptData(encryptedEmail);
-    const user = await User.findOne({email: encryptedEmail });
+// router.post("/temp-password", async (req, res) => {
+//   try {
+//     const min = 10000;
+//     const max = 99999;
+//     const random = Math.floor(Math.random() * (max - min + 1)) + min;
+//     const encryptedEmail = encryptData(req.body.email);
+//     const decryptedEmail = decryptData(encryptedEmail);
+//     const user = await User.findOne({email: encryptedEmail });
 
-    if (!user) {
-      return res.status(200).send({
-        message: "Invalid user.",
-        success: false,
-      });
-    }
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: 'FIUDoctorBooking@gmail.com',
-        pass: 'dastwmvuhcvcddwj',
-      },
-    });
+//     if (!user) {
+//       return res.status(200).send({
+//         message: "Invalid user.",
+//         success: false,
+//       });
+//     }
+//     const transporter = nodemailer.createTransport({
+//       service: 'gmail',
+//       auth: {
+//         user: 'FIUDoctorBooking@gmail.com',
+//         pass: "evgchbhsqyztadvo",
+//       },
+//     });
 
-    const mailOptions = {
-      from: 'FIUDoctorBooking@fiu.edu',
-      to: decryptedEmail, 
-      subject: 'Your Temporary Password.',
-      text: `Your temporary password is: ${random}.`,
-    }
+//     const mailOptions = {
+//       from: 'FIUDoctorBooking@fiu.edu',
+//       to: decryptedEmail, 
+//       subject: 'Your Temporary Password.',
+//       text: `Your temporary password is: ${random}.`,
+//     }
 
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.error('Error sending email:', error);
-        // Handle email sending error
-        return res.status(500).json({ success: false, message: "Error sending email" });
-      } else {
-        console.log('Email sent:', info.response);
-        // Email sent successfully, respond to the client
-        return res.status(200).json({ success: true, message: "Temporary password sent", });
-      }
-    });
+//     transporter.sendMail(mailOptions, (error, info) => {
+//       if (error) {
+//         console.error('Error sending email:', error);
+//         // Handle email sending error
+//         return res.status(500).json({ success: false, message: "Error sending email" });
+//       } else {
+//         console.log('Email sent:', info.response);
+//         // Email sent successfully, respond to the client
+//         return res.status(200).json({ success: true, message: "Temporary password sent", });
+//       }
+//     });
 
-    res.status(200).send({
-      message: "Email sent.",
-      success: true,
-      data: random
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).send({
-      message: "Error sending email.",
-      success: false,
-      error,
-    });
-  }
-});
+//     res.status(200).send({
+//       message: "Email sent.",
+//       success: true,
+//       data: random
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).send({
+//       message: "Error sending email.",
+//       success: false,
+//       error,
+//     });
+//   }
+// });
 
-router.post("/verify-temp-password", async (req, res) => {
-  try {
-    encryptedEmail = encryptData(req.body.email);
-    const user = await User.findOne({ email: encryptedEmail });
-    if (!user) {
-      console.log("invalid user.");
-    }
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(req.body.password, salt);
-    user.password = hashedPassword;
-    await user.save();
-  } catch (error) {
-    console.error(error);
-  }
-});
+// router.post("/verify-temp-password", async (req, res) => {
+//   try {
+//     encryptedEmail = encryptData(req.body.email);
+//     const user = await User.findOne({ email: encryptedEmail });
+//     if (!user) {
+//       console.log("invalid user.");
+//     }
+//     const salt = await bcrypt.genSalt(10);
+//     const hashedPassword = await bcrypt.hash(req.body.password, salt);
+//     user.password = hashedPassword;
+//     await user.save();
+//   } catch (error) {
+//     console.error(error);
+//   }
+// });
 
 
 module.exports = router;
