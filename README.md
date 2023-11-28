@@ -26,3 +26,7 @@ Navigate to the client folder and run:
 In the root directory, run:
 1. npm install
 2. nodemon server.js / node server.js
+
+## RUN VULNERABILITY SCANNER
+1. Navigate outside of the projects dictionary
+2. Run command: bearer scan Doctor-appointment-booking-app-master
