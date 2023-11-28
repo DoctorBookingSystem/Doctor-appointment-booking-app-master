@@ -55,8 +55,8 @@ router.get("/get-all-users", authMiddleware, async (req, res) => {
     const users = await User.find({});
 
       const decryptedUsers = users.map(user => {
-        const decryptedName = user.name;
-        const decryptedEmail = user.email;
+        const decryptedName = decryptData(user.name);
+        const decryptedEmail = decryptData(user.email);
         
           return {
             ...user._doc, 

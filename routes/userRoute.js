@@ -12,6 +12,8 @@ const multer = require("multer");
 const path = require("path");
 const ClamScan = require('clamscan');
 const LOCK_TIME = 2 * 60 * 1000;
+const DOMPurify = require('dompurify');
+
 
 const AuditLogin = require("../models/auditLoginModel");
 const AuditChanges = require("../models/auditChangesModel");
@@ -27,8 +29,6 @@ router.post("/register", async (req, res) => {
   try {
 
     const {email, name, lastName, phoneNumber, agreedToTerms} = req.body;
-    console.log("Original Values:", { email, phoneNumber, name, lastName });
-
     const encryptedEmail = encryptData(email);
     const userExists = await User.findOne({ email: encryptedEmail });
     const encryptedPhoneNumber = encryptData(phoneNumber);
@@ -98,7 +98,7 @@ router.post("/login" , async (req, res) => {
         to: decryptedEmail, 
         subject: 'Account Security Alert - Potential Breach Detected',
         html: ` <p>
-        Dear ${decryptData(user.name)},
+        Dear ${DOMPurify.sanitize(decryptData(user.name))},
         <br><br>
         We are writing to inform you about an important security event related to your account. Our security systems have detected multiple failed login attempts 
         on your account. While your account remains secure, these unauthorized attempts raise concerns about the safety of your credentials. If you ever suspect any unusual activity or have questions about your account's security, 
@@ -417,7 +417,7 @@ router.post("/validate-password", async (req, res) => {
         to: decryptData(user.email), 
         subject: 'Account Security Alert - Potential Breach Detected',
         html: ` <p>
-        Dear ${decryptData(user.name)},
+        Dear ${DOMPurify.sanitize(decryptData(user.name))},
         <br><br>
         We are writing to inform you about an important security event related to your account. Our security systems have detected multiple failed login attempts on your account. While your account remains secure, these unauthorized attempts raise concerns about the safety of your credentials. To maintain the security of your personal health data, we kindly request you to change your account password immediately.
         <br><br>
@@ -472,6 +472,7 @@ router.post("/get-user-info-by-id", authMiddleware, async (req, res) => {
      const decryptedName = decryptData(user.name);
      const decryptedLName = decryptData(user.lastName);
      const decryptedNumber = decryptData(user.phoneNumber);
+     const decryptEmail = decryptData(user.email);
 
      const decryptedPatientInfo = user.patientInfo.map((info) => ({
       age: decryptData(info.age),
@@ -487,6 +488,7 @@ router.post("/get-user-info-by-id", authMiddleware, async (req, res) => {
      user.name = decryptedName;
      user.lastName = decryptedLName;
      user.phoneNumber = decryptedNumber;
+     user.email = decryptEmail;
 
     if (!user) {
       return res
@@ -603,44 +605,44 @@ router.post("/get-user-info-by-id", authMiddleware, async (req, res) => {
 //   }
 // });
 
-router.post("/get-user-info-by-id", authMiddleware, async (req, res) => {
-  try {
-     const user = await User.findOne({ _id: req.body.userId });
-     const decryptedName = decryptData(user.name);
-     const decryptedLName = decryptData(user.lastName);
-     const decryptedNumber = decryptData(user.phoneNumber);
+// router.post("/get-user-info-by-id", authMiddleware, async (req, res) => {
+//   try {
+//      const user = await User.findOne({ _id: req.body.userId });
+//      const decryptedName = decryptData(user.name);
+//      const decryptedLName = decryptData(user.lastName);
+//      const decryptedNumber = decryptData(user.phoneNumber);
 
-     const decryptedPatientInfo = user.patientInfo.map((info) => ({
-      age: decryptData(info.age),
-      height: decryptData(info.height),
-      weight: decryptData(info.weight),
-      bronchitis: decryptData(info.bronchitis),
-      diabetes: decryptData(info.diabetes),
-      asthma: decryptData(info.asthma),
-      high_blood_pressure: decryptData(info.high_blood_pressure),
-      epilepsy_seizures: decryptData(info.epilepsy_seizures)
-    }));
-     user.patientInfo = decryptedPatientInfo;
-     user.name = decryptedName;
-     user.lastName = decryptedLName;
-     user.phoneNumber = decryptedNumber;
+//      const decryptedPatientInfo = user.patientInfo.map((info) => ({
+//       age: decryptData(info.age),
+//       height: decryptData(info.height),
+//       weight: decryptData(info.weight),
+//       bronchitis: decryptData(info.bronchitis),
+//       diabetes: decryptData(info.diabetes),
+//       asthma: decryptData(info.asthma),
+//       high_blood_pressure: decryptData(info.high_blood_pressure),
+//       epilepsy_seizures: decryptData(info.epilepsy_seizures)
+//     }));
+//      user.patientInfo = decryptedPatientInfo;
+//      user.name = decryptedName;
+//      user.lastName = decryptedLName;
+//      user.phoneNumber = decryptedNumber;
 
-    if (!user) {
-      return res
-        .status(200)
-        .send({ message: "User does not exist", success: false });
-    } else {
-      res.status(200).send({
-        success: true,
-        data: user,
-      });
-    }
-  } catch (error) {
-    res
-      .status(500)
-      .send({ message: "Error getting user info", success: false, error });
-  }
-});
+//     if (!user) {
+//       return res
+//         .status(200)
+//         .send({ message: "User does not exist", success: false });
+//     } else {
+//       res.status(200).send({
+//         success: true,
+//         data: user,
+//       });
+//     }
+//   } catch (error) {
+//     res
+//       .status(500)
+//       .send({ message: "Error getting user info", success: false, error });
+//   }
+// });
 
 router.post("/update-user-profile", authMiddleware, async (req, res) => {
   try {
