@@ -10,6 +10,10 @@ function ResetPassword() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
   const [resetCodeEntered, setResetCodeEntered] = useState(false);
+  const [passwordValidation, setPasswordValidation] = useState({
+    message: "",
+    isValid: false,
+  });
   const navigate = useNavigate();
 
   const handleVerifyResetCode = async () => {
@@ -27,20 +31,40 @@ function ResetPassword() {
   };
 
   const handleResetPassword = async () => {
-    try {
-      // Check if new password and confirm password match
-      if (newPassword !== confirmPassword) {
-        setMessage("Passwords do not match. Please re-enter your new password.");
-        return;
-      }
+    checkPasswordStrength(newPassword);
+    if (passwordValidation.isValid) {
+      try {
+        // Check if new password and confirm password match
+        if (newPassword !== confirmPassword) {
+          setMessage("Passwords do not match. Please re-enter your new password.");
+          return;
+        }
 
-      // Call the reset password API endpoint
-      await axios.post("/api/user/reset-password", { resetCode, newPassword });
-      toast.success("Password changed successfully!");
-      navigate("/login");
-    } catch (error) {
-      console.error(error);
-      toast.error("Error resetting password.");
+        // Call the reset password API endpoint
+        const response = await axios.post("/api/user/reset-password", { resetCode, newPassword });
+        if (response.data.success == true){
+          toast.success("Password changed successfully!");
+          navigate("/login");
+        }
+        else  
+          toast.error(response.data.message);
+      } catch (error) {
+        console.error(error);
+        toast.error("Error resetting password.");
+      }
+  }
+};
+
+  const checkPasswordStrength = (newPassword) => {
+    const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*])(?=.{8,})/;
+    if (strongRegex.test(newPassword)) {
+      setPasswordValidation({ message: "", isValid: true });
+    } else {
+      setPasswordValidation({
+        message:
+          "Password must have at least 8 characters, one uppercase letter, and one special character (!@#$%^&*).",
+        isValid: false,
+      });
     }
   };
 
@@ -63,14 +87,29 @@ function ResetPassword() {
           </div>
         ) : (
           <Form layout="vertical">
-            <Form.Item label="New Password">
+            {/* <Form.Item label="New Password">
               <Input
                 type="password"
                 placeholder="Enter new password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
               />
-            </Form.Item>
+            </Form.Item> */}
+            <Form.Item
+              label="New Password"
+              name="password"
+              validateStatus={passwordValidation.isValid ? "success" : "error"}
+              help={passwordValidation.message}
+            >
+            <Input
+              placeholder="Password"
+              type="password"
+              onChange={(e) => {
+                setNewPassword(e.target.value);
+                checkPasswordStrength(e.target.value);
+              }}
+            />
+          </Form.Item>
             <Form.Item label="Confirm Password">
               <Input
                 type="password"

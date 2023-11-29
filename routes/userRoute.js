@@ -34,6 +34,7 @@ router.post("/register", async (req, res) => {
     const encryptedPhoneNumber = encryptData(phoneNumber);
     const encryptedName = encryptData(name);
     const encryptedLName = encryptData(lastName);
+    const isDoctor = req.body.isDoctor;
 
     if (userExists) {
       return res
@@ -44,17 +45,23 @@ router.post("/register", async (req, res) => {
     if (!agreedToTerms) {
       return res.status(400).send({ message: "You must agree to the terms", success: false });
     }
-
-    req.body.email = encryptedEmail;
-    req.body.phoneNumber = encryptedPhoneNumber;
-    req.body.name = encryptedName;
-    req.body.lastName = encryptedLName;
-
+    
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(req.body.password, salt);
     req.body.password = hashedPassword;
-    const newuser = new User(req.body);
-    await newuser.save();
+
+    // Create a new user instance
+    const newUser = new User({
+      email: encryptedEmail,
+      name: encryptedName,
+      lastName: encryptedLName,
+      phoneNumber: encryptedPhoneNumber,
+      password: hashedPassword,
+      passwords: [hashedPassword], 
+      isDoctor: isDoctor
+    });
+
+    await newUser.save();
     res
       .status(200)
       .send({ message: "User created successfully", success: true});
@@ -258,10 +265,10 @@ router.post("/login" , async (req, res) => {
 
 router.post("/forgot-password", async (req, res) => {
   try {
-    const user = await User.findOne({ email: req.body.email });
-    if (!user) {
-      return res.status(200).send({ message: "User not found", success: false });
-    }
+    const enteredEmail = req.body.email; 
+    const encryptedEnteredEmail = encryptData(enteredEmail);
+    const user = await User.findOne({ email: encryptedEnteredEmail });
+    const decryptedEmail = decryptData(encryptedEnteredEmail);
 
     // Generate a unique reset code and set expiration time (1 hour)
     const resetCode = crypto.randomBytes(10).toString("hex");
@@ -283,7 +290,7 @@ router.post("/forgot-password", async (req, res) => {
 
     const mailOptions = {
       from: "FIUDoctorBooking@gmail.com",
-      to: user.email,
+      to: decryptedEmail,
       subject: "Password Reset Code - FIU Doctor Booking Account",
       text: `Your FIU Doctor Booking Account password reset code is: ${resetCode}. This code will expire in 5 minutes.`,
     };
@@ -353,9 +360,28 @@ router.post("/reset-password", async (req, res) => {
       });
     }
 
+    if (Array.isArray(user.passwords) && user.passwords.length > 0) {
+      const previousPasswords = user.passwords;
+      const passwordMatches = previousPasswords.some((passwordHash) => {
+        return bcrypt.compareSync(newPassword, passwordHash);
+    });
+      if (passwordMatches) {
+        return res.status(201).send({
+          message: "New password cannot match a previous password",
+          success: false,
+        });
+      }
+    }
     // Hash the new password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Limit the number of stored passwords to three
+    if (user.passwords.length >= 3) {
+      user.passwords.pop(); // Remove the oldest password
+    }
+
+    user.passwords.unshift(hashedPassword); // Add the new password to the beginning
 
     // Update user's password and clear reset code fields
     user.password = hashedPassword;
@@ -1377,17 +1403,19 @@ router.post("/set_request", authMiddleware, async (req, res) => {
         type: "new notification from the admin.",
         message: "Your request to make changes have been approved!",
         onClickPath: "/notifications",
+        request: true,
       });
+
       user.request = true;
     }else{
       unseenNotifications.push({
         type: "new notification from the admin.",
         message: "Your request to make changes have been denied.",
         onClickPath: "/notifications",
+        request: true,
       });
-    }
+    }  
     await user.save(); 
-
     res.status(200).send({
       success: true,
       message: "",
