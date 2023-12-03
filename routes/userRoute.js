@@ -105,7 +105,7 @@ router.post("/login" , async (req, res) => {
         to: decryptedEmail, 
         subject: 'Account Security Alert - Potential Breach Detected',
         html: ` <p>
-        Dear ${DOMPurify.sanitize(decryptData(user.name))},
+        Dear ${decryptData(user.name)},
         <br><br>
         We are writing to inform you about an important security event related to your account. Our security systems have detected multiple failed login attempts 
         on your account. While your account remains secure, these unauthorized attempts raise concerns about the safety of your credentials. If you ever suspect any unusual activity or have questions about your account's security, 
@@ -909,23 +909,15 @@ router.post("/book-appointment", authMiddleware, async (req, res) => {
 
     user.unseenNotifications.push({
       type: "new-appointment-request",
-      message: `A new appointment request has been made by ${req.body.userInfo.name} ${req.body.userInfo.lastName}.`,
+      message: `A new appointment request has been made by ${decryptData(userConsent.name)} ${decryptData(userConsent.lastName)}`,
       onClickPath: "/doctor/appointments",
     });
-    await user.save();
-    res.status(200).send({
-      message: "Appointment booked successfully",
-      success: true,
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(500).send({
-      message: "Error booking appointment",
-      success: false,
-      error,
-    });
-  }
-  try{
+    // await user.save();
+    // res.status(200).send({
+    //   message: "Appointment booked successfully - Email sent.",
+    //   success: true,
+    // });
+
     const adminEmail = "283160a602594ecbd593521e55753243";
 
     if (req.body.userInfo.email !== adminEmail) {
@@ -934,7 +926,7 @@ router.post("/book-appointment", authMiddleware, async (req, res) => {
         const userLogs = adminUser.userLogs;
         userLogs.push({
           type: "user-appointment",
-          message: `User ${decryptData(req.body.userInfo.name)} (${decryptData(req.body.userInfo.email)}) booked an appointment with Dr. ${user.name} for ${moment(req.body.date).format('MM-DD-YYYY')}`,
+          message: `User ${decryptData(userConsent.name)} (${decryptData(userConsent.email)}) booked an appointment with Dr. ${user.name} for ${moment(req.body.date).format('MM-DD-YYYY')}`,
           onClickPath: "/admin/userlogs",
         });
       
@@ -943,11 +935,11 @@ router.post("/book-appointment", authMiddleware, async (req, res) => {
       }
     }
    
-    const emailSent = await sendAppointmentConfirmationEmail(decryptData(req.body.userInfo.email), user, req.body);
+    const emailSent = await sendAppointmentConfirmationEmail(decryptData(userConsent.email), user, req.body);
 
     if (emailSent) {
       // The email has been sent successfully, now send feedback email
-      const feedbackEmailSent = await sendFeedbackEmail(decryptData(req.body.userInfo.email), req.body);
+      const feedbackEmailSent = await sendFeedbackEmail(decryptData(userConsent.email), req.body);
 
       if (feedbackEmailSent) {
         console.log("Feedback email sent successfully");
@@ -959,20 +951,20 @@ router.post("/book-appointment", authMiddleware, async (req, res) => {
     }
 
 
-    res.status(200).send({
-      message: "Appointment booked successfully - Email Confirmation Sent",
-    });
+    // res.status(200).send({
+    //   message: "Appointment booked successfully - Email Confirmation Sent",
+    // });
 
 
     // req.body.status = "pending";
     // req.body.date = moment(req.body.date, "MM-DD-YYYY").format("MM-DD-YYYY");
     // req.body.time = moment(req.body.time, "h:mm A").format("h:mm A");
 
-    user.unseenNotifications.push({
-      type: "new-appointment-request",
-      message: `A new appointment request has been made by ${decryptData(req.body.userInfo.name)} ${decryptData(req.body.userInfo.lastName)}.`,
-      onClickPath: "/doctor/appointments",
-    });
+    // user.unseenNotifications.push({
+    //   type: "new-appointment-request",
+    //   message: `A new appointment request has been made by ${decryptData(req.body.userInfo.name)} ${decryptData(req.body.userInfo.lastName)}.`,
+    //   onClickPath: "/doctor/appointments",
+    // });
     await user.save();
     res.status(200).send({
       message: "Appointment booked successfully",
@@ -1154,8 +1146,7 @@ router.post("/check-booking-avilability", authMiddleware, async (req, res) => {
           });    
           if (
             doctorStartTime.isAfter(moment(time, "h:mm A")) ||
-            doctorEndTime.isBefore(moment(time, "h:mm A"))  ||
-            moment(time, "h:mm A").isBefore(moment())
+            doctorEndTime.isBefore(moment(time, "h:mm A"))  
           ) {
             return res.status(200).send({
               message: "Invalid appointment time",
@@ -1606,78 +1597,78 @@ router.post("/notify-doctor", authMiddleware, async (req, res) => {
 //   }
 // });
 
-// router.post("/temp-password", async (req, res) => {
-//   try {
-//     const min = 10000;
-//     const max = 99999;
-//     const random = Math.floor(Math.random() * (max - min + 1)) + min;
-//     const encryptedEmail = encryptData(req.body.email);
-//     const decryptedEmail = decryptData(encryptedEmail);
-//     const user = await User.findOne({email: encryptedEmail });
+router.post("/temp-password", async (req, res) => {
+  try {
+    const min = 10000;
+    const max = 99999;
+    const random = Math.floor(Math.random() * (max - min + 1)) + min;
+    const encryptedEmail = encryptData(req.body.email);
+    const decryptedEmail = decryptData(encryptedEmail);
+    const user = await User.findOne({email: encryptedEmail });
 
-//     if (!user) {
-//       return res.status(200).send({
-//         message: "Invalid user.",
-//         success: false,
-//       });
-//     }
-//     const transporter = nodemailer.createTransport({
-//       service: 'gmail',
-//       auth: {
-//         user: 'FIUDoctorBooking@gmail.com',
-//         pass: "evgchbhsqyztadvo",
-//       },
-//     });
+    if (!user) {
+      return res.status(200).send({
+        message: "Invalid user.",
+        success: false,
+      });
+    }
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: 'FIUDoctorBooking@gmail.com',
+        pass: "evgchbhsqyztadvo",
+      },
+    });
 
-//     const mailOptions = {
-//       from: 'FIUDoctorBooking@fiu.edu',
-//       to: decryptedEmail, 
-//       subject: 'Your Temporary Password.',
-//       text: `Your temporary password is: ${random}.`,
-//     }
+    const mailOptions = {
+      from: 'FIUDoctorBooking@fiu.edu',
+      to: decryptedEmail, 
+      subject: 'Your Temporary Password.',
+      text: `Your temporary password is: ${random}.`,
+    }
 
-//     transporter.sendMail(mailOptions, (error, info) => {
-//       if (error) {
-//         console.error('Error sending email:', error);
-//         // Handle email sending error
-//         return res.status(500).json({ success: false, message: "Error sending email" });
-//       } else {
-//         console.log('Email sent:', info.response);
-//         // Email sent successfully, respond to the client
-//         return res.status(200).json({ success: true, message: "Temporary password sent", });
-//       }
-//     });
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error('Error sending email:', error);
+        // Handle email sending error
+        return res.status(500).json({ success: false, message: "Error sending email" });
+      } else {
+        console.log('Email sent:', info.response);
+        // Email sent successfully, respond to the client
+        return res.status(200).json({ success: true, message: "Temporary password sent", });
+      }
+    });
 
-//     res.status(200).send({
-//       message: "Email sent.",
-//       success: true,
-//       data: random
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).send({
-//       message: "Error sending email.",
-//       success: false,
-//       error,
-//     });
-//   }
-// });
+    res.status(200).send({
+      message: "Email sent.",
+      success: true,
+      data: random
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({
+      message: "Error sending email.",
+      success: false,
+      error,
+    });
+  }
+});
 
-// router.post("/verify-temp-password", async (req, res) => {
-//   try {
-//     encryptedEmail = encryptData(req.body.email);
-//     const user = await User.findOne({ email: encryptedEmail });
-//     if (!user) {
-//       console.log("invalid user.");
-//     }
-//     const salt = await bcrypt.genSalt(10);
-//     const hashedPassword = await bcrypt.hash(req.body.password, salt);
-//     user.password = hashedPassword;
-//     await user.save();
-//   } catch (error) {
-//     console.error(error);
-//   }
-// });
+router.post("/verify-temp-password", async (req, res) => {
+  try {
+    encryptedEmail = encryptData(req.body.email);
+    const user = await User.findOne({ email: encryptedEmail });
+    if (!user) {
+      console.log("invalid user.");
+    }
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(req.body.password, salt);
+    user.password = hashedPassword;
+    await user.save();
+  } catch (error) {
+    console.error(error);
+  }
+});
 
 
 module.exports = router;

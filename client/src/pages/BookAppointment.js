@@ -157,7 +157,6 @@ function BookAppointment() {
 
       dispatch(hideLoading());
       if (response.data.success) {
-        
         toast.success(response.data.message);
         navigate('/appointments')
       }
