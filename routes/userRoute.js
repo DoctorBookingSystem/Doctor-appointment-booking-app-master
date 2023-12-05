@@ -34,6 +34,7 @@ router.post("/register", async (req, res) => {
     const encryptedPhoneNumber = encryptData(phoneNumber);
     const encryptedName = encryptData(name);
     const encryptedLName = encryptData(lastName);
+    const isDoctor = req.body.isDoctor;
 
     if (userExists) {
       return res
@@ -44,17 +45,23 @@ router.post("/register", async (req, res) => {
     if (!agreedToTerms) {
       return res.status(400).send({ message: "You must agree to the terms", success: false });
     }
-
-    req.body.email = encryptedEmail;
-    req.body.phoneNumber = encryptedPhoneNumber;
-    req.body.name = encryptedName;
-    req.body.lastName = encryptedLName;
-
+    
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(req.body.password, salt);
     req.body.password = hashedPassword;
-    const newuser = new User(req.body);
-    await newuser.save();
+
+    // Create a new user instance
+    const newUser = new User({
+      email: encryptedEmail,
+      name: encryptedName,
+      lastName: encryptedLName,
+      phoneNumber: encryptedPhoneNumber,
+      password: hashedPassword,
+      passwords: [hashedPassword], 
+      isDoctor: isDoctor
+    });
+
+    await newUser.save();
     res
       .status(200)
       .send({ message: "User created successfully", success: true});
@@ -264,7 +271,7 @@ router.post("/forgot-password", async (req, res) => {
     if (!user) {
       return res.status(200).send({ message: "User not found", success: false });
     }
-
+    
     // Generate a unique reset code and set expiration time (1 hour)
     const resetCode = crypto.randomBytes(10).toString("hex");
     const resetCodeExpiration = Date.now() + 300000;
@@ -355,9 +362,28 @@ router.post("/reset-password", async (req, res) => {
       });
     }
 
+    if (Array.isArray(user.passwords) && user.passwords.length > 0) {
+      const previousPasswords = user.passwords;
+      const passwordMatches = previousPasswords.some((passwordHash) => {
+        return bcrypt.compareSync(newPassword, passwordHash);
+    });
+      if (passwordMatches) {
+        return res.status(201).send({
+          message: "New password cannot match a previous password",
+          success: false,
+        });
+      }
+    }
     // Hash the new password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Limit the number of stored passwords to three
+    if (user.passwords.length >= 3) {
+      user.passwords.pop(); // Remove the oldest password
+    }
+
+    user.passwords.unshift(hashedPassword); // Add the new password to the beginning
 
     // Update user's password and clear reset code fields
     user.password = hashedPassword;
@@ -1024,60 +1050,6 @@ async function sendFeedbackEmail(userEmail, appointmentDetails) {
 
 
 
-
-
-//     // Send appointment confirmation email
-//     const transporter = nodemailer.createTransport({
-//       service: 'gmail', // e.g., 'Gmail'
-//       auth: {
-//         user: 'FIUDoctorBooking@gmail.com',
-//         pass: 'dastwmvuhcvcddwj',
-//       },
-//     });
-
-//     const mailOptions = {
-//       from: 'FIUDoctorBooking@gmail.com',
-//       to: req.body.userInfo.email, // User's email
-//       subject: 'Appointment Confirmation - FIU Doctor Booking',
-//       html: `
-//         <p>Dear ${req.body.userInfo.name},</p>
-//         <p>Your appointment with Dr. ${user.name} has been confirmed.</p>
-//         <p>Date: ${req.body.date}</p>
-//         <p>Time: ${req.body.time}</p>
-//         <p>Location: FIU Health Center</p>
-//         <p>Doctor's Contact Information:</p>
-//         <p>Phone Number: ${user.phoneNumber}</p>
-//         <p>Email: ${user.email}</p>
-//         <p>Thank you for choosing our service!</p>
-//         <p>Regards,</p>
-//         <p>FIU Health Services</p>
-//         <p><img src="https://collegiaterecovery.org/wp-content/uploads/2022/02/FIU.png" alt="FIU Health Services" width="300" height="100"></p>
-        
-//       `,
-//     };
-
-//     transporter.sendMail(mailOptions, (error, info) => {
-//       if (error) {
-//         console.log(error);
-//       } else {
-//         console.log('Email sent: ' + info.response);
-//       }
-//     });
-
-//     res.status(200).send({
-//       message: "Appointment booked successfully - Email Confirmation Sent",
-//       success: true,
-//     });
-//   } catch (error) {
-//     console.log(error);
-//     res.status(500).send({
-//       message: "Error booking appointment",
-//       success: false,
-//       error,
-//     });
-//   }
-// });
-
 router.post("/check-booking-avilability", authMiddleware, async (req, res) => {
   try {
         const date = req.body.date;
@@ -1352,17 +1324,19 @@ router.post("/set_request", authMiddleware, async (req, res) => {
         type: "new notification from the admin.",
         message: "Your request to make changes have been approved!",
         onClickPath: "/notifications",
+        request: true,
       });
+
       user.request = true;
     }else{
       unseenNotifications.push({
         type: "new notification from the admin.",
         message: "Your request to make changes have been denied.",
         onClickPath: "/notifications",
+        request: true,
       });
-    }
+    }  
     await user.save(); 
-
     res.status(200).send({
       success: true,
       message: "",
@@ -1414,217 +1388,79 @@ router.post("/notify-doctor", authMiddleware, async (req, res) => {
   }
 });
 
-// router.post("/forgot-password", async (req, res) => {
-//   try {
-//     const enteredEmail = req.body.email; 
-//     const encryptedEnteredEmail = encryptData(enteredEmail);
-//     const user = await User.findOne({ email: encryptedEnteredEmail });
-//     if (!user) {
-//       return res.status(200).send({ message: "User not found", success: false });
-//     }
 
-//     // Generate a unique reset code and set expiration time (1 hour)
-//     const resetCode = crypto.randomBytes(10).toString("hex");
-//     const resetCodeExpiration = Date.now() + 300000;
+router.post("/temp-password", async (req, res) => {
+  try {
+    const min = 10000;
+    const max = 99999;
+    const random = Math.floor(Math.random() * (max - min + 1)) + min;
+    const encryptedEmail = encryptData(req.body.email);
+    const decryptedEmail = decryptData(encryptedEmail);
+    const user = await User.findOne({email: encryptedEmail });
 
-//     // Save reset code and expiration time to the user object
-//     user.resetCode = resetCode;
-//     user.resetCodeExpiration = resetCodeExpiration;
-//     await user.save();
+    if (!user) {
+      return res.status(200).send({
+        message: "Invalid user.",
+        success: false,
+      });
+    }
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: 'FIUDoctorBooking@gmail.com',
+        pass: "evgchbhsqyztadvo",
+      },
+    });
 
-//     // Send reset code to user's email using Nodemailer
-//     const transporter = nodemailer.createTransport({
-//       service: "gmail",
-//       auth: {
-//         user: "FIUDoctorBooking@gmail.com",
-//         pass: "evgchbhsqyztadvo",
-//       },
-//     });
-//     const decryptedEmail = decryptData(encryptedEnteredEmail);
-//     const mailOptions = {
-//       from: "FIUDoctorBooking@gmail.com",
-//       to: decryptedEmail,
-//       subject: "Password Reset Code - FIU Doctor Booking Account",
-//       text: `Your FIU Doctor Booking Account password reset code is: ${resetCode}. This code will expire in 5 minutes.`,
-//     };
+    const mailOptions = {
+      from: 'FIUDoctorBooking@fiu.edu',
+      to: decryptedEmail, 
+      subject: 'Your Temporary Password.',
+      text: `Your temporary password is: ${random}.`,
+    }
 
-//     transporter.sendMail(mailOptions, (error, info) => {
-//       if (error) {
-//         console.error(error);
-//         return res.status(500).send({ message: "Error sending reset code email", success: false });
-//       }
-//       console.log("Reset code email sent: " + info.response);
-//       return res.status(200).send({ message: "Reset code sent to your email", success: true });
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).send({ message: "Error sending reset code", success: false, error });
-//   }
-// });
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error('Error sending email:', error);
+        // Handle email sending error
+        return res.status(500).json({ success: false, message: "Error sending email" });
+      } else {
+        console.log('Email sent:', info.response);
+        // Email sent successfully, respond to the client
+        return res.status(200).json({ success: true, message: "Temporary password sent", });
+      }
+    });
 
-// router.post("/reset-password", async (req, res) => {
-//   try {
-//     const { resetCode, newPassword } = req.body;
+    res.status(200).send({
+      message: "Email sent.",
+      success: true,
+      data: random
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({
+      message: "Error sending email.",
+      success: false,
+      error,
+    });
+  }
+});
 
-//     // Verify the reset code
-//     const user = await User.findOne({
-//       resetCode: resetCode,
-//       resetCodeExpiration: { $gt: Date.now() },
-//     });
-
-//     if (!user) {
-//       return res.status(400).json({
-//         message: "Invalid or expired reset code",
-//         success: false,
-//       });
-//     }
-
-//     if (user.passwords && user.passwords.length > 0) {
-//       const previousPasswords = user.passwords;
-//       const passwordMatches = previousPasswords.some((passwordHash) => {
-//         return bcrypt.compareSync(newPassword, passwordHash);
-//       });
-
-//       if (passwordMatches) {
-//         return res.status(201).send({
-//           message: "New password cannot match a previous password",
-//           success: false,
-//         });
-//       }
-//     }
-
-//     // Hash the new password and add it to the passwords array
-//     const saltRounds = 10;
-//     const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
-
-//     // Limit the number of stored passwords to three
-//     if (user.passwords.length >= 3) {
-//       user.passwords.pop(); // Remove the oldest password
-//     }
-
-//     user.passwords.unshift(hashedPassword); // Add the new password to the beginning
-
-//     // Update user's password and clear reset code fields
-//     user.password = hashedPassword;
-//     user.resetCode = undefined;
-//     user.resetCodeExpiration = undefined;
-
-//     // Save the updated user object to the database
-//     await user.save();
-
-//     // Respond with a success message
-//     res.status(200).json({
-//       message: "Password reset successful",
-//       success: true,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({
-//       message: "Error resetting password",
-//       success: false,
-//       error: error.message,
-//     });
-//   }
-// });
-
-// router.post("/verify-reset-code", async (req, res) => {
-//   try {
-//     const user = await User.findOne({
-//       resetCode: req.body.resetCode,
-//       resetCodeExpiration: { $gt: Date.now() },
-//     });
-//     if (!user) {
-//       return res.status(200).send({
-//         message: "Invalid or expired reset code",
-//         success: false,
-//       });
-//     }
-//     res.status(200).send({
-//       message: "Reset code verified successfully",
-//       success: true,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).send({
-//       message: "Error verifying reset code",
-//       success: false,
-//       error,
-//     });
-//   }
-// });
-
-// router.post("/temp-password", async (req, res) => {
-//   try {
-//     const min = 10000;
-//     const max = 99999;
-//     const random = Math.floor(Math.random() * (max - min + 1)) + min;
-//     const encryptedEmail = encryptData(req.body.email);
-//     const decryptedEmail = decryptData(encryptedEmail);
-//     const user = await User.findOne({email: encryptedEmail });
-
-//     if (!user) {
-//       return res.status(200).send({
-//         message: "Invalid user.",
-//         success: false,
-//       });
-//     }
-//     const transporter = nodemailer.createTransport({
-//       service: 'gmail',
-//       auth: {
-//         user: 'FIUDoctorBooking@gmail.com',
-//         pass: "evgchbhsqyztadvo",
-//       },
-//     });
-
-//     const mailOptions = {
-//       from: 'FIUDoctorBooking@fiu.edu',
-//       to: decryptedEmail, 
-//       subject: 'Your Temporary Password.',
-//       text: `Your temporary password is: ${random}.`,
-//     }
-
-//     transporter.sendMail(mailOptions, (error, info) => {
-//       if (error) {
-//         console.error('Error sending email:', error);
-//         // Handle email sending error
-//         return res.status(500).json({ success: false, message: "Error sending email" });
-//       } else {
-//         console.log('Email sent:', info.response);
-//         // Email sent successfully, respond to the client
-//         return res.status(200).json({ success: true, message: "Temporary password sent", });
-//       }
-//     });
-
-//     res.status(200).send({
-//       message: "Email sent.",
-//       success: true,
-//       data: random
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).send({
-//       message: "Error sending email.",
-//       success: false,
-//       error,
-//     });
-//   }
-// });
-
-// router.post("/verify-temp-password", async (req, res) => {
-//   try {
-//     encryptedEmail = encryptData(req.body.email);
-//     const user = await User.findOne({ email: encryptedEmail });
-//     if (!user) {
-//       console.log("invalid user.");
-//     }
-//     const salt = await bcrypt.genSalt(10);
-//     const hashedPassword = await bcrypt.hash(req.body.password, salt);
-//     user.password = hashedPassword;
-//     await user.save();
-//   } catch (error) {
-//     console.error(error);
-//   }
-// });
+router.post("/verify-temp-password", async (req, res) => {
+  try {
+    encryptedEmail = encryptData(req.body.email);
+    const user = await User.findOne({ email: encryptedEmail });
+    if (!user) {
+      console.log("invalid user.");
+    }
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(req.body.password, salt);
+    user.password = hashedPassword;
+    await user.save();
+  } catch (error) {
+    console.error(error);
+  }
+});
 
 
 module.exports = router;

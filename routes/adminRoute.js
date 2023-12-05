@@ -137,6 +137,7 @@ router.post("/request_changes", authMiddleware, async (req, res) => {
     const user = await User.findOne({ email: '283160a602594ecbd593521e55753243' });
     const notificationMessage = `${req.body.name} ${req.body.lastName} has requested to change their medical information.`        
     const unseenNotifications = user.unseenNotifications;
+    user.notificationRequest = true;
 
     unseenNotifications.push({
       type: "new-request change",

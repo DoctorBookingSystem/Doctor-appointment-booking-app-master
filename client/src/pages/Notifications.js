@@ -6,13 +6,24 @@ import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import { hideLoading, showLoading } from "../redux/alertsSlice";
 import { setUser } from "../redux/userSlice";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 function Notifications() {
   const { user } = useSelector((state) => state.user);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const storedAcceptPressed = localStorage.getItem('acceptPressed');
+  const storedDeclinePressed = localStorage.getItem('declinePressed');
+  const [acceptPressed, setAcceptPressed] = useState(storedAcceptPressed === 'true');
+  const [declinePressed, setDeclinePressed] = useState(storedDeclinePressed === 'true');
   const [userRequest, setUserRequest] = useState(null);
+  const isAdminUser = user?.isAdmin;
+
+  useEffect(() => {
+    // Update localStorage whenever acceptPressed changes
+    localStorage.setItem('acceptPressed', acceptPressed.toString());
+    localStorage.setItem('declinePressed', declinePressed.toString());
+  }, [acceptPressed, declinePressed]);
 
   const markAllAsSeen=async()=>{
     try {
@@ -57,8 +68,6 @@ function Notifications() {
   }
     const fetchUserById = async (userId, action) => {
       try {
-        markAllAsSeen();
-        console.log("Client: "+userId);
         const response = await axios.post(
           "/api/user/set_request",
           {
@@ -80,7 +89,7 @@ function Notifications() {
         console.error(error);
       }
     };
-
+    
   return (
     <Layout>
       <h1 className="page-title">Notifications</h1>
@@ -91,27 +100,36 @@ function Notifications() {
           <div className="d-flex justify-content-end">
             <h1 className="anchor" onClick={()=>markAllAsSeen()}>Mark all as seen</h1>
           </div>
-
           {user?.unseenNotifications.map((notification) => (
-            <div className="card p-2 mt-2" onClick={()=>navigate(notification.onClickPath)}>
-                <div className="card-text">{notification.message}</div>
-                {notification.request ? (
-                  <div>
-                  <span
-                    className="clickable-text"
-                    onClick={() => fetchUserById(notification.user,"accept")}
-                  >
-                    Accept
-                  </span>
-                  <span
-                    className="clickable-text"
-                    onClick={() => fetchUserById(notification.user, "decline")}
-                    style={{ marginLeft: '10px' }} 
-                  >
-                    Decline
-                  </span>
-                  </div>
-                ) : <p></p>}
+            <div className="card p-2 mt-2" onClick={() => navigate(notification.onClickPath)}>
+              <div className="card-text">{notification.message}</div>
+              {notification.request && isAdminUser? (
+                <div>
+                  {!declinePressed && (
+                    <span
+                      className="clickable-text"
+                      onClick={() => {
+                        fetchUserById(notification.user, "accept");
+                        setAcceptPressed(true);
+                      }}
+                    >
+                      {acceptPressed ? "" : "Accept"}
+                    </span>
+                  )}
+                  {!acceptPressed && (
+                    <span
+                      className="clickable-text"
+                      onClick={() => {
+                        fetchUserById(notification.user, "decline");
+                        setDeclinePressed(true);
+                      }}
+                      style={{ marginLeft: declinePressed ? '0px' : '10px' }}
+                    >
+                      {declinePressed ? "" : "Decline"}
+                    </span>
+                  )}
+                </div>
+              ) : <p></p>}
             </div>
           ))}
         </Tabs.TabPane>
