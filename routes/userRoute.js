@@ -98,7 +98,7 @@ router.post("/login" , async (req, res) => {
         to: decryptedEmail, 
         subject: 'Account Security Alert - Potential Breach Detected',
         html: ` <p>
-        Dear ${DOMPurify.sanitize(decryptData(user.name))},
+        Dear ${decryptData(user.name)},
         <br><br>
         We are writing to inform you about an important security event related to your account. Our security systems have detected multiple failed login attempts 
         on your account. While your account remains secure, these unauthorized attempts raise concerns about the safety of your credentials. If you ever suspect any unusual activity or have questions about your account's security, 
@@ -258,7 +258,9 @@ router.post("/login" , async (req, res) => {
 
 router.post("/forgot-password", async (req, res) => {
   try {
-    const user = await User.findOne({ email: req.body.email });
+    const enteredEmail = req.body.email; 
+    const encryptedEnteredEmail = encryptData(enteredEmail);
+    const user = await User.findOne({ email: encryptedEnteredEmail });
     if (!user) {
       return res.status(200).send({ message: "User not found", success: false });
     }
@@ -283,7 +285,7 @@ router.post("/forgot-password", async (req, res) => {
 
     const mailOptions = {
       from: "FIUDoctorBooking@gmail.com",
-      to: user.email,
+      to: decryptData(user.email),
       subject: "Password Reset Code - FIU Doctor Booking Account",
       text: `Your FIU Doctor Booking Account password reset code is: ${resetCode}. This code will expire in 5 minutes.`,
     };
@@ -417,7 +419,7 @@ router.post("/validate-password", async (req, res) => {
         to: decryptData(user.email), 
         subject: 'Account Security Alert - Potential Breach Detected',
         html: ` <p>
-        Dear ${DOMPurify.sanitize(decryptData(user.name))},
+        Dear ${decryptData(user.name)},
         <br><br>
         We are writing to inform you about an important security event related to your account. Our security systems have detected multiple failed login attempts on your account. While your account remains secure, these unauthorized attempts raise concerns about the safety of your credentials. To maintain the security of your personal health data, we kindly request you to change your account password immediately.
         <br><br>
@@ -867,39 +869,28 @@ router.get("/get-all-approved-doctors", authMiddleware, async (req, res) => {
   }
 });
 
-router.post("/book-appointment", authMiddleware, async (req, res) => {
 
-  const newAppointment = new Appointment(req.body);
-  await newAppointment.save();
-  const user = await User.findOne({ _id: req.body.doctorInfo.userId });
-  const userConsent = await User.findOne({ _id: req.body.userInfo._id });
-  userConsent.consent = true;
-  await userConsent.save();
-  
+
+router.post("/book-appointment", authMiddleware, async (req, res) => {
   try {
     req.body.status = "pending";
     req.body.date = moment(req.body.date, "MM-DD-YYYY").format("MM-DD-YYYY");
     req.body.time = moment(req.body.time, "h:mm A").format("h:mm A");
+    const newAppointment = new Appointment(req.body);
+    await newAppointment.save();
+    //pushing notification to doctor based on his userid
+    const user = await User.findOne({ _id: req.body.doctorInfo.userId });
+    const userConsent = await User.findOne({ _id: req.body.userInfo._id });
+    userConsent.consent = true;
+    await userConsent.save();
 
     user.unseenNotifications.push({
       type: "new-appointment-request",
-      message: `A new appointment request has been made by ${req.body.userInfo.name} ${req.body.userInfo.lastName}.`,
+      message: `A new appointment request has been made by ${decryptData(userConsent.name)} ${decryptData(userConsent.lastName)}.`,
       onClickPath: "/doctor/appointments",
     });
     await user.save();
-    res.status(200).send({
-      message: "Appointment booked successfully",
-      success: true,
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(500).send({
-      message: "Error booking appointment",
-      success: false,
-      error,
-    });
-  }
-  try{
+
     const adminEmail = "283160a602594ecbd593521e55753243";
 
     if (req.body.userInfo.email !== adminEmail) {
@@ -908,7 +899,7 @@ router.post("/book-appointment", authMiddleware, async (req, res) => {
         const userLogs = adminUser.userLogs;
         userLogs.push({
           type: "user-appointment",
-          message: `User ${decryptData(req.body.userInfo.name)} (${decryptData(req.body.userInfo.email)}) booked an appointment with Dr. ${user.name} for ${moment(req.body.date).format('MM-DD-YYYY')}`,
+          message: `User ${decryptData(userConsent.name)} (${decryptData(userConsent.email)}) booked an appointment with Dr. ${decryptData(user.name)} for ${moment(req.body.date).format('MMMM Do YYYY')}`,
           onClickPath: "/admin/userlogs",
         });
       
@@ -916,12 +907,12 @@ router.post("/book-appointment", authMiddleware, async (req, res) => {
         await adminUser.save();
       }
     }
-   
-    const emailSent = await sendAppointmentConfirmationEmail(decryptData(req.body.userInfo.email), user, req.body);
+    console.log("Email:", userConsent.email);
+    const emailSent = await sendAppointmentConfirmationEmail(decryptData(userConsent.email), user, req.body);
 
     if (emailSent) {
       // The email has been sent successfully, now send feedback email
-      const feedbackEmailSent = await sendFeedbackEmail(decryptData(req.body.userInfo.email), req.body);
+      const feedbackEmailSent = await sendFeedbackEmail(decryptData(userConsent.email), req.body);
 
       if (feedbackEmailSent) {
         console.log("Feedback email sent successfully");
@@ -935,21 +926,6 @@ router.post("/book-appointment", authMiddleware, async (req, res) => {
 
     res.status(200).send({
       message: "Appointment booked successfully - Email Confirmation Sent",
-    });
-
-
-    // req.body.status = "pending";
-    // req.body.date = moment(req.body.date, "MM-DD-YYYY").format("MM-DD-YYYY");
-    // req.body.time = moment(req.body.time, "h:mm A").format("h:mm A");
-
-    user.unseenNotifications.push({
-      type: "new-appointment-request",
-      message: `A new appointment request has been made by ${decryptData(req.body.userInfo.name)} ${decryptData(req.body.userInfo.lastName)}.`,
-      onClickPath: "/doctor/appointments",
-    });
-    await user.save();
-    res.status(200).send({
-      message: "Appointment booked successfully",
       success: true,
     });
   } catch (error) {
@@ -1128,8 +1104,7 @@ router.post("/check-booking-avilability", authMiddleware, async (req, res) => {
           });    
           if (
             doctorStartTime.isAfter(moment(time, "h:mm A")) ||
-            doctorEndTime.isBefore(moment(time, "h:mm A"))  ||
-            moment(time, "h:mm A").isBefore(moment())
+            doctorEndTime.isBefore(moment(time, "h:mm A"))
           ) {
             return res.status(200).send({
               message: "Invalid appointment time",
